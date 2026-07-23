@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "profile": "deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark",
-  "captured_at_utc": "2026-07-23T17:30:00Z",
+  "captured_at_utc": "2026-07-23T19:10:00Z",
   "image": "vllm-dspark-runtime:dspark-nvfp4-stage-c",
   "image_id": "sha256:2035c23b1f353a9f1e98fe2d4204255b4213c5f075eee933ab1fcb99650fb900",
   "runtime": {
@@ -15,7 +15,11 @@
     "tensor_parallel_size": 2,
     "pipeline_parallel_size": 1,
     "speculative_method": "dspark",
-    "speculative_tokens": 3
+    "speculative_tokens": 3,
+    "reasoning_parser": "deepseek_v4",
+    "reasoning_start_str": "<think>",
+    "reasoning_end_str": "</think>",
+    "thinking_default": false
   },
   "memory": {
     "kv_cache_dtype": "nvfp4_ds_mla",
@@ -24,13 +28,55 @@
     "engine_reported_usable_kv_tokens": 1515055,
     "max_num_seqs": 8,
     "max_num_batched_tokens": 8192,
-    "gpu_memory_utilization": 0.8
+    "gpu_memory_utilization": 0.8,
+    "block_size": 256,
+    "max_cudagraph_capture_size": 32
+  },
+  "scheduler": {
+    "async_scheduling": true,
+    "chunked_prefill": true,
+    "prefix_caching": true,
+    "flashinfer_autotune": true,
+    "distributed_executor_backend": "mp"
+  },
+  "dspark_env": {
+    "VLLM_DSPARK_CONFIDENCE_THRESHOLD": "0.0",
+    "VLLM_DSPARK_CONFIDENCE_SCHEDULER": "off",
+    "VLLM_DSPARK_LOCAL_ARGMAX": "1",
+    "VLLM_DSPARK_REPLICATE_MARKOV_W1": "1",
+    "VLLM_DSPARK_GPU_REJECTED_CONTEXT_MASK": "1",
+    "VLLM_DSPARK_HARDWARE_SCHEDULER_EARLY_STOP": "1",
+    "VLLM_DSPARK_FUSED_MARKOV_ARGMAX": "0",
+    "VLLM_DSPARK_REFERENCE_KV_QUANT_DEQUANT": "0",
+    "VLLM_DSV4_B12X_COMPRESSED_MLA": "0",
+    "VLLM_DSV4_DSPARK_DEFER_TARGET_CAPTURE": "0",
+    "VLLM_DSV4_DSPARK_DEFER_TARGET_CAPTURE_EXACT": "0",
+    "MTP_NUM_TOKENS": "3"
+  },
+  "b12x_env": {
+    "VLLM_USE_B12X_MOE": "1",
+    "VLLM_USE_B12X_WO_PROJECTION": "1",
+    "B12X_W4A16_TC_DECODE": "0",
+    "VLLM_B12X_W4A16_FORCE_BLOCKS_MAX_M": "16",
+    "VLLM_B12X_W4A16_FORCE_BLOCKS_PER_SM": "0",
+    "VLLM_B12X_W4A16_FORCE_TILE_CONFIG": ""
+  },
+  "sparse_indexer_env": {
+    "VLLM_TRITON_MLA_SPARSE": "1",
+    "VLLM_SPARSE_INDEXER_MAX_LOGITS_MB": "256"
   },
   "mounts": [
     {
       "type": "bind",
+      "source": "${HF_CACHE_DIR}",
       "destination": "/cache/huggingface",
       "mode": "rw"
+    },
+    {
+      "type": "bind",
+      "source": "${DSPARK_PROPOSER_PATH}",
+      "destination": "/opt/env/lib/python3.12/site-packages/vllm/v1/spec_decode/dspark_proposer.py",
+      "mode": "ro"
     }
   ]
 }
