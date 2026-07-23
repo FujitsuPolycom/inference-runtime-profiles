@@ -26,6 +26,17 @@ profiles/<profile-name>/
   README.md                 # profile-specific notes
 ```
 
+Included reference profiles:
+
+- `glm52-daily-bf16rope-lmcache`: TP4/DCP4/MTP3 daily stack with BF16 RoPE,
+  replicated indexer, depth-3 prefetch, sparse CE decode, and 48 GB LMCache RAM.
+- `glm52-v20-promotion-fp8rope-offload`: separate v20 FP8-RoPE/Grid188 profile
+  with PCIe i8-ring and DRAM/NVMe offload.
+
+These are sanitized templates, not executable claims about a particular host.
+Every local path, image digest, and scale-file location must be filled in via a
+private `.env` before launch.
+
 ## Commands
 
 From the deployment host:
@@ -57,4 +68,3 @@ docker compose --env-file .env -f profiles/daily-v20/compose.yml up -d
 
 Use immutable image digests, explicit ports, and a separate project name for
 each profile. Record benchmark results in `RESULTS.md`, not raw request data.
-
