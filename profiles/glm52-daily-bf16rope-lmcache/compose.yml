@@ -4,10 +4,18 @@ services:
     gpus: all
     restart: unless-stopped
     ports:
-      - "${PORT}:8000"
+      - "${PORT}:5802"
+    entrypoint: [/usr/local/bin/serve-glm52-lmcache.sh]
     environment:
       CUDA_VISIBLE_DEVICES: 0,1,2,3
       CUDA_DEVICE_MAX_CONNECTIONS: "32"
+      MODEL: /model
+      SERVED_MODEL_NAME: GLM-5.2-MXFP8-NVFP4-NF3-Hybrid
+      PORT: "5802"
+      GRAPH: "32"
+      LOAD_FORMAT: instanttensor
+      MOE_BACKEND: b12x
+      QUANTIZATION: nvfp4_nf3_hybrid
       KV_CACHE_DTYPE: nvfp4_ds_mla
       KV_FP8_ROPE: "0"
       KV_CACHE_MEMORY_BYTES: "3489660928"
@@ -50,8 +58,12 @@ services:
       MAX_NUM_BATCHED_TOKENS: "${MAX_NUM_BATCHED_TOKENS}"
       MAX_NUM_SEQS: "${MAX_NUM_SEQS}"
       VLLM_DISABLED_KERNELS: MarlinFP8ScaledMMLinearKernel
+      VLLM_USE_B12X_PCIE_DMA: "0"
+      VLLM_PCIE_DMA_FP8: "0"
+      B12X_PCIE_DMA_FP8: "0"
+      VLLM_DISABLE_COMPILE_CACHE: "1"
+      VLLM_NVFP4_MLA_SCALES_FILE: /config/mla-scales.json
     volumes:
       - ${MODEL_DIR}:/model:ro
       - ${CACHE_DIR}:/cache:rw
       - ${SCALE_FILE}:/config/mla-scales.json:ro
-
