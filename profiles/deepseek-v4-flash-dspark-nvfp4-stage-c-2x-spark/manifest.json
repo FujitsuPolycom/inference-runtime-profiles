@@ -1,0 +1,36 @@
+{
+  "schema_version": 1,
+  "profile": "deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark",
+  "captured_at_utc": "2026-07-23T17:30:00Z",
+  "image": "vllm-dspark-runtime:dspark-nvfp4-stage-c",
+  "image_id": "sha256:2035c23b1f353a9f1e98fe2d4204255b4213c5f075eee933ab1fcb99650fb900",
+  "runtime": {
+    "vllm": "0.21.1rc1.dev339+g1967a5627bc3",
+    "cuda_arch": "12.1a",
+    "topology": "two-node tensor parallel over RDMA fabric"
+  },
+  "model": {
+    "id": "deepseek-ai/DeepSeek-V4-Flash-DSpark",
+    "served_name": "DeepSeek-V4-Flash-NVFP4-StageC",
+    "tensor_parallel_size": 2,
+    "pipeline_parallel_size": 1,
+    "speculative_method": "dspark",
+    "speculative_tokens": 3
+  },
+  "memory": {
+    "kv_cache_dtype": "nvfp4_ds_mla",
+    "kv_cache_memory_bytes_per_rank": 10737418240,
+    "max_model_len": 1048576,
+    "engine_reported_usable_kv_tokens": 1515055,
+    "max_num_seqs": 8,
+    "max_num_batched_tokens": 8192,
+    "gpu_memory_utilization": 0.8
+  },
+  "mounts": [
+    {
+      "type": "bind",
+      "destination": "/cache/huggingface",
+      "mode": "rw"
+    }
+  ]
+}

@@ -32,6 +32,7 @@ profiles/<profile-name>/
 |---|---|---|
 | [GLM-5.2 daily BF16-RoPE + LMCache](profiles/glm52-daily-bf16rope-lmcache/) | Validated daily TP4/DCP4/MTP3 stack | 432-byte BF16-RoPE, 48 GB RAM tier |
 | [GLM-5.2 v20 FP8-RoPE promotion](profiles/glm52-v20-promotion-fp8rope-offload/) | Separate v20/Grid188/offload candidate | 368-byte FP8-RoPE, DRAM + NVMe tier |
+| [DeepSeek V4 Flash DSpark NVFP4 Stage C, 2x Spark](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | Two-node long-context DeepSeek profile | `nvfp4_ds_mla`, TP2, MTP3, 1M request ceiling |
 
 Hardware and comparison card: [HARDWARE.md](HARDWARE.md)
 
@@ -48,6 +49,8 @@ LMCache tier**; NVMe is not automatically part of that tier. See
   replicated indexer, depth-3 prefetch, sparse CE decode, and 48 GB LMCache RAM.
 - `glm52-v20-promotion-fp8rope-offload`: separate v20 FP8-RoPE/Grid188 profile
   with PCIe i8-ring and DRAM/NVMe offload.
+- `deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark`: two-node TP2 / MTP3
+  DeepSeek V4 Flash DSpark profile with resident NVFP4 KV.
 
 These are sanitized templates, not executable claims about a particular host.
 Every local path, image digest, and scale-file location must be filled in via a
