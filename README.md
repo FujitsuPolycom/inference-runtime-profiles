@@ -26,7 +26,12 @@ profiles/<profile-name>/
   README.md                 # profile-specific notes
 ```
 
-Included reference profiles:
+## Profiles
+
+| Profile | Main use | KV / offload |
+|---|---|---|
+| [GLM-5.2 daily BF16-RoPE + LMCache](profiles/glm52-daily-bf16rope-lmcache/) | Validated daily TP4/DCP4/MTP3 stack | 432-byte BF16-RoPE, 48 GB RAM tier |
+| [GLM-5.2 v20 FP8-RoPE promotion](profiles/glm52-v20-promotion-fp8rope-offload/) | Separate v20/Grid188/offload candidate | 368-byte FP8-RoPE, DRAM + NVMe tier |
 
 - `glm52-daily-bf16rope-lmcache`: TP4/DCP4/MTP3 daily stack with BF16 RoPE,
   replicated indexer, depth-3 prefetch, sparse CE decode, and 48 GB LMCache RAM.
