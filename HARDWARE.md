@@ -52,3 +52,26 @@ DCP penalty/recovery shape; they are not a baseline for the FP8-RoPE profile.
 - Cold numbers must be reported separately from warm numbers because JIT and
   graph capture can dominate the first sample.
 
+## Consumer GPU rig (RTX 5090)
+
+The Qwen3.6-27B profile targets this class of single-GPU host.
+
+| Component | Configuration |
+|---|---|
+| GPU | 1x NVIDIA RTX 5090, 32 GiB |
+| System RAM | 919 GiB (LMCache L1 uses 256 GiB as pinned host memory) |
+| CUDA | CUDA 13.0-class runtime; SM120 kernels |
+| Storage | Optane RAID0 (~200 GB) for LMCache L2; pmem for HF/vLLM caches |
+| Parallelism | TP1 / MTP3 |
+
+### RTX 5090 performance snapshots
+
+| Metric | Value |
+|---|---|
+| Model weights (NVFP4) | 18.65 GiB |
+| GPU KV cache tokens | 204,039 |
+| MTP3 acceptance rate | 70.5% |
+| Inter-token latency p50 | 35 ms |
+| Decode throughput | ~99 tok/s |
+| LMCache L1 store / retrieve | 0.011 s / 0.001 s (1600-token chunk) |
+
