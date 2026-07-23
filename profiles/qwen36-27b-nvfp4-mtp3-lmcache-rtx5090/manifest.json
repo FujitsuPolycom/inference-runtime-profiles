@@ -1,0 +1,64 @@
+{
+  "schema_version": 1,
+  "profile": "qwen36-27b-nvfp4-mtp3-lmcache-rtx5090",
+  "captured_at_utc": "2026-07-23T19:30:00Z",
+  "image": "pve03-qwen27b-qwen-mtp-compat:v0251",
+  "image_id": "sha256:e4f88a835143cd22aee2397a26ec6bb80b3a4a6fe0c882bcbc63822904766089",
+  "runtime": {
+    "vllm": "0.25.1",
+    "lmcache": "0.5.1",
+    "cuda_arch": "12.0",
+    "topology": "single-GPU host-local Docker with host networking"
+  },
+  "model": {
+    "id": "lyf/Qwen3.6-27B-uncensored-heretic-v2-NVFP4-MTP",
+    "served_name": "Qwen3.6-27B-FP8-MTP",
+    "tensor_parallel_size": 1,
+    "pipeline_parallel_size": 1,
+    "speculative_method": "mtp",
+    "speculative_tokens": 3
+  },
+  "memory": {
+    "kv_cache_dtype": "fp8",
+    "mamba_cache_mode": "align",
+    "mamba_ssm_cache_dtype": "float32",
+    "block_size": 1600,
+    "kv_cache_size_tokens": 204039,
+    "max_model_len": 131072,
+    "max_num_seqs": 1,
+    "max_num_batched_tokens": 3199,
+    "gpu_memory_utilization": 0.88
+  },
+  "lmcache": {
+    "version": "0.5.1",
+    "connector": "LMCacheMPConnector",
+    "kv_role": "kv_both",
+    "chunk_size": 1600,
+    "l1_size_gb": 256,
+    "l1_init_size_gb": 8,
+    "l1_mode": "lazy",
+    "eviction_policy": "LRU",
+    "l2_adapter": "fs_native",
+    "l2_capacity_gb": 180,
+    "l2_use_odirect": true,
+    "kv_layer_groups": 4,
+    "kv_layers": 65
+  },
+  "mounts": [
+    {
+      "type": "bind",
+      "destination": "/root/.cache/huggingface",
+      "mode": "rw"
+    },
+    {
+      "type": "bind",
+      "destination": "/vllm-cache",
+      "mode": "rw"
+    },
+    {
+      "type": "bind",
+      "destination": "/lmcache-l2",
+      "mode": "rw"
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+services:
+  lmcache:
+    image: ${LMCACHE_IMAGE}
+    container_name: lmcache-server
+    network_mode: host
+    ipc: host
+    shm_size: 32gb
+    gpus: all
+    restart: "no"
+    volumes:
+      - ${LMCACHE_L2_DIR}:/lmcache-l2
+    entrypoint: ["lmcache", "server"]
+    command:
+      - --host
+      - 127.0.0.1
+      - --port
+      - "${LMCACHE_PORT}"
+      - --http-host
+      - 127.0.0.1
+      - --http-port
+      - "${LMCACHE_HTTP_PORT}"
+      - --prometheus-port
+      - "${LMCACHE_PROM_PORT}"
+      - --chunk-size
+      - "1600"
+      - --l1-size-gb
+      - "${LMCACHE_L1_GB}"
+      - --l1-init-size-gb
+      - "8"
+      - --l1-use-lazy
+      - --eviction-policy
+      - LRU
+      - --eviction-trigger-watermark
+      - "0.80"
+      - --eviction-ratio
+      - "0.20"
+      - --max-workers
+      - "16"
+      - --l2-prefetch-max-in-flight
+      - "8"
+      - --l2-adapter
+      - '{"type":"fs_native","base_path":"/lmcache-l2","num_workers":32,"use_odirect":true,"max_capacity_gb":180}'
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:${LMCACHE_HTTP_PORT}/healthcheck >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 10s
+
+  inference:
+    image: ${IMAGE_DIGEST}
+    container_name: inference-server
+    network_mode: host
+    ipc: host
+    shm_size: 32gb
+    restart: "no"
+    depends_on:
+      lmcache:
+        condition: service_healthy
+    gpus: all
+    environment:
+      CUDA_DEVICE_ORDER: PCI_BUS_ID
+      CUDA_VISIBLE_DEVICES: "0"
+      HUGGINGFACE_HUB_CACHE: /root/.cache/huggingface/hub
+      HF_HOME: /root/.cache/huggingface
+      VLLM_CACHE_ROOT: /vllm-cache
+      VLLM_NVFP4_GEMM_BACKEND: flashinfer-cutlass
+      VLLM_USE_FLASHINFER_MOE_FP4: "0"
+    volumes:
+      - ${HF_CACHE_DIR}:/root/.cache/huggingface:rw
+      - ${VLLM_CACHE_DIR}:/vllm-cache:rw
+    entrypoint: ["vllm", "serve"]
+    command:
+      - ${MODEL_ID}
+      - --served-model-name
+      - ${SERVED_MODEL_NAME}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "${PORT}"
+      - --trust-remote-code
+      - --language-model-only
+      - --max-model-len
+      - "${MAX_MODEL_LEN}"
+      - --max-num-seqs
+      - "${MAX_NUM_SEQS}"
+      - --gpu-memory-utilization
+      - "${GPU_MEMORY_UTILIZATION}"
+      - --kv-cache-dtype
+      - fp8
+      - --speculative-config
+      - '{"method":"mtp","num_speculative_tokens":${MTP_TOKENS}}'
+      - --reasoning-parser
+      - qwen3
+      - --enable-auto-tool-choice
+      - --tool-call-parser
+      - qwen3_coder
+      - --enable-prefix-caching
+      - --mamba-cache-mode
+      - align
+      - --no-disable-hybrid-kv-cache-manager
+      - --enable-chunked-prefill
+      - --max-num-batched-tokens
+      - "${MAX_NUM_BATCHED_TOKENS}"
+      - --kv-transfer-config
+      - '{"kv_connector":"LMCacheMPConnector","kv_connector_module_path":"lmcache.integration.vllm.lmcache_mp_connector","kv_role":"kv_both","kv_connector_extra_config":{"lmcache.mp.host":"tcp://127.0.0.1","lmcache.mp.port":${LMCACHE_PORT},"lmcache.mp.mq_timeout":300.0,"lmcache.mp.heartbeat_interval":10.0}}'
