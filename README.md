@@ -34,6 +34,7 @@ profiles/<profile-name>/
 | [GLM-5.2 v20 FP8-RoPE promotion](profiles/glm52-v20-promotion-fp8rope-offload/) | Separate v20/Grid188/offload candidate | 368-byte FP8-RoPE, DRAM + NVMe tier |
 | [DeepSeek V4 Flash DSpark NVFP4 Stage C, 2x Spark](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | Two-node long-context DeepSeek profile | `nvfp4_ds_mla`, TP2, MTP3, 1M request ceiling |
 | [Qwen3.6-27B NVFP4 MTP3 + LMCache, RTX 5090](profiles/qwen36-27b-nvfp4-mtp3-lmcache-rtx5090/) | Single-GPU Qwen hybrid/Mamba with LMCache | FP8 KV, 204K tokens, 256 GB RAM L1 + Optane L2 |
+| [GLM-5.2 v20 enhanced BF16-RoPE](profiles/glm52-v20-enhanced-bf16rope-lmcache/) | Staged migration of daily enhancements onto fixed v20 | 432-byte BF16-RoPE, 48 GB RAM tier |
 
 Hardware and comparison cards: [HARDWARE.md](HARDWARE.md)
 
