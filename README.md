@@ -35,6 +35,15 @@ profiles/<profile-name>/
 
 Hardware and comparison card: [HARDWARE.md](HARDWARE.md)
 
+### Reference Rig
+
+All profiles target a single-node workstation with **4x NVIDIA RTX PRO 6000
+Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system
+RAM**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed filesystem. Typical
+GLM testing uses **TP4/DCP4/MTP3**. The daily profile uses a **48 GB host-RAM
+LMCache tier**; NVMe is not automatically part of that tier. See
+[HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
+
 - `glm52-daily-bf16rope-lmcache`: TP4/DCP4/MTP3 daily stack with BF16 RoPE,
   replicated indexer, depth-3 prefetch, sparse CE decode, and 48 GB LMCache RAM.
 - `glm52-v20-promotion-fp8rope-offload`: separate v20 FP8-RoPE/Grid188 profile
