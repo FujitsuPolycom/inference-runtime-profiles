@@ -20,7 +20,7 @@ replicated-indexer and sparse-decode overlays are disabled.
 
 - 4x NVIDIA RTX PRO 6000 Blackwell, 96 GiB each
 - AMD Threadripper PRO 9965WX
-- 128 GiB system RAM
+- 128 GiB system RAM 8x16GB DDR5 6400
 - PCIe Gen5 x16-class GPU links, direct motherboard/riser topology
 - TP4 / DCP4 / MTP3
 
