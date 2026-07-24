@@ -5,6 +5,9 @@ workstation. It uses only features shipped in the published July 23 v20 image:
 no source overlay, sparse-decode experiment, replicated-indexer patch, or
 external KV cache.
 
+This profile provides **482,560 maximum available GPU KV tokens** with a
+**262,144-token maximum model length**.
+
 ## Runtime
 
 | Setting | Value |

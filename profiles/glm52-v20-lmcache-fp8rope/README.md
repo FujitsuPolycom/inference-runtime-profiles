@@ -21,8 +21,10 @@ are intentionally absent.
 - `DCP_PREFILL_WORKSPACE=auto`, `DCP_QUERY_SPLIT=0`, `DCP_CKV_GATHER=1`
 - `GPU_MEMORY_UTILIZATION=0.9640`
 
-The current live service reports 433,152 global GPU KV tokens and supports the
-400,384-token model context with 1.08x maximum single-request concurrency.
+The current live service reports **433,152 maximum available global GPU KV
+tokens** and uses a **400,384-token maximum model length**, with 1.08x maximum
+single-request concurrency. See [RESULTS.md](RESULTS.md) for the latest
+sanitized benchmark summary.
 Repeated requests produced L1 hits; a controlled 1 GB-L1 pressure test
 produced explicit L2 hits. A fixed-seed, temperature-zero response matched
 clean v20 byte-for-byte.
