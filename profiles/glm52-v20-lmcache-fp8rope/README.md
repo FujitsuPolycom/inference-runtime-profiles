@@ -11,6 +11,9 @@ are intentionally absent.
 - A startup wrapper configures the 48 GB RAM and 96 GB filesystem tiers.
 - No custom sparse-decode, replicated-indexer, or CKV-prefetch source overlay is
   mounted into the running container.
+- The live container image is a locally built overlay, not the public v20 image
+  tag. Its vLLM/SparkInfer lineage and launcher commits are recorded in
+  `manifest.json`.
 
 ## Settings
 
@@ -20,6 +23,10 @@ are intentionally absent.
 - `MAX_BATCHED_TOKENS=3072`, graph cap 32
 - `DCP_PREFILL_WORKSPACE=auto`, `DCP_QUERY_SPLIT=0`, `DCP_CKV_GATHER=1`
 - `GPU_MEMORY_UTILIZATION=0.9640`
+- `VLLM_DCP_REPLICATE_INDEXER_CACHE=0`
+- Sparse decode and bulk sparse prefetch are disabled.
+- PCIe all-reduce is enabled through the C++ backend; fused RTX6K all-reduce is
+  disabled.
 
 The current live service reports **433,152 maximum available global GPU KV
 tokens** and uses a **400,384-token maximum model length**, with 1.08x maximum

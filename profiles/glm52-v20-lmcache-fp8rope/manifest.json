@@ -1,0 +1,48 @@
+{
+  "profile": "glm52-v20-lmcache-fp8rope",
+  "status": "current-live",
+  "captured_at": "2026-07-24",
+  "hardware": {
+    "gpu": "4x NVIDIA RTX PRO 6000 Blackwell, 96 GiB each",
+    "cpu": "AMD Threadripper PRO 9965WX",
+    "system_ram_gib": 128,
+    "gpu_link": "PCIe Gen5 x16-class"
+  },
+  "runtime": {
+    "image": "ai01/glm52-v20-lmcache:grouped-dcp-0.5.2-hma",
+    "base_vllm_image_lineage": "voipmonitor/vllm:gilded-gnosis-v20-vllm7e3bee1-si6234185-fi801d57a-cu132-20260723",
+    "vllm_commit": "7e3bee1ed4bc87efbdc36060647a3475cfaa1f1e",
+    "b12x_sparkinfer_commit": "62341856cc5497d0c8ba33012dab6118925a6cfb",
+    "flashinfer_commit": "801d57a08958c13d375ddbb6be3be4808f48a708",
+    "cuda": "13.2.1",
+    "torch": "2.12.0+cu132",
+    "nccl": "2.30.4"
+  },
+  "model": {
+    "served_name": "GLM-5.2",
+    "parallelism": "TP4/DCP4/MTP3",
+    "max_model_len": 400384,
+    "max_num_seqs": 8,
+    "max_num_batched_tokens": 3072,
+    "cuda_graph_max": 32,
+    "kv_cache_dtype": "nvfp4_ds_mla",
+    "kv_fp8_rope": true,
+    "kv_record_bytes": 368,
+    "reported_max_gpu_kv_tokens": 433152,
+    "maximum_concurrency_at_max_model_len": 1.08
+  },
+  "offload": {
+    "lmcache_grouped_dcp": true,
+    "ram_l1_gib": 48,
+    "nvme_l2_gib": 96,
+    "chunk_tokens": 512,
+    "disk_sharding": "by_gpu",
+    "async_loading": false,
+    "layerwise": false,
+    "save_decode_cache": false
+  },
+  "host_requirements": {
+    "nvidia_p2p_registry_override": true,
+    "resizable_bar": true
+  }
+}
