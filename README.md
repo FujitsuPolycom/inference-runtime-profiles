@@ -50,8 +50,8 @@ These values are specific to the tested NVIDIA PCIe workstation topology. Keep
 console access available, verify peer connectivity after reboot, and do not
 blindly apply them to unrelated hardware or driver versions. See
 [HARDWARE.md](HARDWARE.md) and the
-[clean v20 daily profile](profiles/glm52-daily-v20-clean-no-lmcache/) for the
-reference configuration and measured comparison.
+[current v20 LMCache daily profile](profiles/glm52-v20-lmcache-fp8rope/) for
+the reference configuration and measured comparison.
 
 ## Benchmarking
 
