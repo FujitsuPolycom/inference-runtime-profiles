@@ -12,3 +12,4 @@ uses the same LMCache and v20 settings as the FP8 profile, but preserves the
 
 Measured GPU KV capacity was 276,992 tokens. The L1/L2 cache behavior and
 fixed-seed correctness checks passed. Expect lower capacity than FP8 RoPE.
+See [RESULTS.md](RESULTS.md) for the benchmark status.
