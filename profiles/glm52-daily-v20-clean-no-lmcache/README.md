@@ -67,6 +67,11 @@ docker compose --env-file .env up -d
 The API serves `GLM-5.2` on the configured port. The reference LiteLLM aliases
 are `ai01-glm52` and `ai01-glm5.2`.
 
+## Benchmark
+
+Use the repository's [standardized benchmark commands](../../BENCHMARKING.md).
+The documented reference endpoint and model name match this profile.
+
 ## Notes
 
 - The server warns that 2,048 batched tokens may be undersized for MTP3.
@@ -75,4 +80,3 @@ are `ai01-glm52` and `ai01-glm5.2`.
   concurrency headroom; it does not raise the per-request context ceiling.
 - PCIe links may report Gen1 while idle and should rise under load.
 - Benchmark prompts must be unique when measuring cold prefill.
-

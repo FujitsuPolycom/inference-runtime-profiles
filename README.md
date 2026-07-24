@@ -53,6 +53,12 @@ blindly apply them to unrelated hardware or driver versions. See
 [clean v20 daily profile](profiles/glm52-daily-v20-clean-no-lmcache/) for the
 reference configuration and measured comparison.
 
+## Benchmarking
+
+See [BENCHMARKING.md](BENCHMARKING.md) for PowerShell-ready quick, practical,
+full-standard, and cold-prefill benchmark commands using
+`local-inference-lab/llm-inference-bench`.
+
 ## Layout
 
 ```text
