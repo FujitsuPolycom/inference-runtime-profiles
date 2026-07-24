@@ -25,6 +25,7 @@ replicated-indexer and sparse-decode overlays are disabled.
 - PCIe Gen5 x16-class GPU links, direct motherboard/riser topology
 - TP4 / DCP4 / MTP3
 
+## IMPORTANT: P2P Settings - Without this expect -30% decode loses at C1+
 The NVIDIA P2P and Resizable BAR settings are required for the reference
 decode results. Verify them with the repository hardware checks before use on
 another machine.
