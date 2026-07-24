@@ -59,6 +59,10 @@ See [BENCHMARKING.md](BENCHMARKING.md) for PowerShell-ready quick, practical,
 full-standard, and cold-prefill benchmark commands using
 `local-inference-lab/llm-inference-bench`.
 
+For the reference four-GPU PCIe host, run `tools/check-pcie-p2p.sh` as root
+before deployment. It checks the NVIDIA registry override, runtime driver
+parameters, GPU topology, and CUDA peer-access visibility.
+
 ## Layout
 
 ```text
@@ -81,8 +85,16 @@ Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB 
 | Profile | Main use | KV / offload |
 |---|---|---|
 | [GLM-5.2 daily v20, no LMCache](profiles/glm52-daily-v20-clean-no-lmcache/) | **Current daily** published v20 TP4/DCP4/MTP3 stack | 432-byte BF16-RoPE, 482,560 GPU KV tokens |
+| [GLM-5.2 v20 + LMCache, FP8 RoPE](profiles/glm52-v20-lmcache-fp8rope/) | Validated v20 LMCache profile | 368-byte FP8-RoPE, 48 GB RAM + 96 GB NVMe L2, ~327K GPU KV tokens |
+| [GLM-5.2 v20 + LMCache, BF16 RoPE](profiles/glm52-v20-lmcache-bf16rope/) | Validated 432-byte compatibility profile | 48 GB RAM + 96 GB NVMe L2, ~277K GPU KV tokens |
 | [GLM-5.2 legacy BF16-RoPE + LMCache](profiles/glm52-daily-bf16rope-lmcache/) | Previous enhanced v19 daily stack | 432-byte BF16-RoPE, 48 GB RAM tier |
 | [GLM-5.2 v20 FP8-RoPE promotion](profiles/glm52-v20-promotion-fp8rope-offload/) | Separate v20/Grid188/offload candidate | 368-byte FP8-RoPE, DRAM + NVMe tier |
+| [GLM-5.2 v20 enhanced BF16-RoPE](profiles/glm52-v20-enhanced-bf16rope-lmcache/) | Staged v20 enhancement migration | 432-byte BF16-RoPE, 48 GB RAM tier |
+
+### 2x DGX Spark profiles
+
+These are separate from the 4x RTX workstation profiles and target two DGX
+Spark systems. They should not be treated as interchangeable launch recipes.
 
 #### DeepSeek V4 Flash
 
@@ -96,7 +108,6 @@ Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB 
 | Profile | Main use | KV / offload |
 |---|---|---|
 | [Qwen3.6-27B NVFP4 MTP3 + LMCache, RTX 5090](profiles/qwen36-27b-nvfp4-mtp3-lmcache-rtx5090/) | Single-GPU Qwen hybrid/Mamba with LMCache | FP8 KV, 204K tokens, 256 GB RAM L1 + Optane L2 |
-| [GLM-5.2 v20 enhanced BF16-RoPE](profiles/glm52-v20-enhanced-bf16rope-lmcache/) | Staged migration of daily enhancements onto fixed v20 | 432-byte BF16-RoPE, 48 GB RAM tier |
 
 ## Commands
 

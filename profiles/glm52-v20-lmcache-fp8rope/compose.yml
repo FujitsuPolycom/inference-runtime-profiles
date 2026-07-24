@@ -1,0 +1,37 @@
+services:
+  inference:
+    image: ${IMAGE_DIGEST}
+    gpus: all
+    ipc: host
+    network_mode: host
+    shm_size: 32g
+    restart: unless-stopped
+    entrypoint: [/opt/profile/start-v20-lmcache.sh]
+    environment:
+      CUDA_VISIBLE_DEVICES: 0,1,2,3
+      MODEL: /model
+      SERVED_MODEL_NAME: GLM-5.2
+      PORT: "${PORT}"
+      TP: "${TP}"
+      DCP: "${DCP}"
+      MTP: "${MTP}"
+      MODEL_FAMILY: glm52-hybrid
+      GPU_MEMORY_UTILIZATION: "0.9622"
+      KV_FP8_ROPE: "1"
+      MAX_BATCHED_TOKENS: "4096"
+      GRAPH: "32"
+      DCP_PREFILL_WORKSPACE: auto
+      DCP_QUERY_SPLIT: "0"
+      DCP_CKV_GATHER: "1"
+      LMCACHE_L1_GB: "48"
+      LMCACHE_L1_INIT_GB: "48"
+      LMCACHE_CHUNK_SIZE: "512"
+      LMCACHE_L2_PATH: /lmcache-l2
+      LMCACHE_L2_GB: "96"
+      LMCACHE_PORT: "5555"
+      LMCACHE_HTTP_PORT: "8089"
+    volumes:
+      - ${MODEL_DIR}:/model:ro
+      - ${CACHE_DIR}:/cache:rw
+      - ${L2_DIR}:/lmcache-l2:rw
+      - ../../tools/start-v20-lmcache.sh:/opt/profile/start-v20-lmcache.sh:ro
