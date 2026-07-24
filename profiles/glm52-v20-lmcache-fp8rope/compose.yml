@@ -16,10 +16,10 @@ services:
       DCP: "${DCP}"
       MTP: "${MTP}"
       MODEL_FAMILY: glm52-hybrid
-      GPU_MEMORY_UTILIZATION: "0.9622"
+      GPU_MEMORY_UTILIZATION: "0.9640"
       MAX_MODEL_LEN: "${MAX_MODEL_LEN}"
       KV_FP8_ROPE: "1"
-      MAX_BATCHED_TOKENS: "4096"
+      MAX_BATCHED_TOKENS: "3072"
       GRAPH: "32"
       DCP_PREFILL_WORKSPACE: auto
       DCP_QUERY_SPLIT: "0"

@@ -78,18 +78,15 @@ profiles/<profile-name>/
 
 ### 4x GPU profiles
 
-Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM 6400 (8x16GB)**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The current daily profile is clean v20 with no external KV tier; the former 48 GB host-RAM LMCache configuration remains available as a legacy profile. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
+Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM 6400 (8x16GB)**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The maintained profiles below are limited to the current LMCache deployment, the clean 2048-token baseline, and the BF16-RoPE compatibility profile. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
 
 #### GLM-5.2
 
 | Profile | Main use | KV / offload |
 |---|---|---|
-| [GLM-5.2 daily v20, no LMCache](profiles/glm52-daily-v20-clean-no-lmcache/) | **Current daily** published v20 TP4/DCP4/MTP3 stack | 432-byte BF16-RoPE, 482,560 GPU KV tokens |
-| [GLM-5.2 v20 + LMCache, FP8 RoPE](profiles/glm52-v20-lmcache-fp8rope/) | Validated v20 LMCache profile | 368-byte FP8-RoPE, 48 GB RAM + 96 GB NVMe L2, ~327K GPU KV tokens |
-| [GLM-5.2 v20 + LMCache, BF16 RoPE](profiles/glm52-v20-lmcache-bf16rope/) | Validated 432-byte compatibility profile | 48 GB RAM + 96 GB NVMe L2, ~277K GPU KV tokens |
-| [GLM-5.2 legacy BF16-RoPE + LMCache](profiles/glm52-daily-bf16rope-lmcache/) | Previous enhanced v19 daily stack | 432-byte BF16-RoPE, 48 GB RAM tier |
-| [GLM-5.2 v20 FP8-RoPE promotion](profiles/glm52-v20-promotion-fp8rope-offload/) | Separate v20/Grid188/offload candidate | 368-byte FP8-RoPE, DRAM + NVMe tier |
-| [GLM-5.2 v20 enhanced BF16-RoPE](profiles/glm52-v20-enhanced-bf16rope-lmcache/) | Staged v20 enhancement migration | 432-byte BF16-RoPE, 48 GB RAM tier |
+| [GLM-5.2 v20 + LMCache, FP8 RoPE](profiles/glm52-v20-lmcache-fp8rope/) | **Current live** grouped LMCache deployment | 368-byte FP8-RoPE, 48 GB RAM + 96 GB NVMe L2, 433,152 GPU KV tokens at 400,384 max context |
+| [GLM-5.2 daily v20, no LMCache](profiles/glm52-daily-v20-clean-no-lmcache/) | Clean v20 **2048-token baseline** | 432-byte BF16-RoPE, 482,560 GPU KV tokens |
+| [GLM-5.2 v20 + LMCache, BF16 RoPE](profiles/glm52-v20-lmcache-bf16rope/) | BF16-RoPE compatibility comparison | 432-byte BF16-RoPE, 48 GB RAM + 96 GB NVMe L2 |
 
 ### 2x DGX Spark profiles
 
