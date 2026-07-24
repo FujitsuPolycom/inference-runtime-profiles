@@ -17,9 +17,11 @@ Source: `v20-practical-coding-20260724-141006.json`.
 | 200K | 92.8 | 116.6 | capacity-limited | capacity-limited |
 | 356K | 100.3 | capacity-limited | capacity-limited | capacity-limited |
 
-Cold/integrated prefill was approximately 3,318 tok/s at 8K, 3,024 at 64K,
-2,902 at 128K, 2,794 at 200K, and 2,593 at 356K. The 10-run coding peak had
-a 134.3 tok/s median and 135.5 tok/s mean.
+Cold/integrated prefill was approximately 3,318 tok/s at 8K, 3,051 at 16K,
+3,081 at 32K, 3,024 at 64K, 2,902 at 128K, 2,794 at 200K, and 2,593 at
+356K. The measured prompt sizes were 8,197, 16,227, 32,318, 64,508, 128,877,
+201,286, and 358,187 tokens respectively. The 10-run coding peak had a 134.3
+tok/s median, 135.5 tok/s mean, and 143.2 tok/s maximum.
 
 ## Prior short run
 
