@@ -31,12 +31,14 @@ decode results. Verify them with the repository hardware checks before use on
 another machine.
 
 Verify: 
-|grep -E 'EnableResizableBar|RegistryDwords' /proc/driver/nvidia/params|
+```bash
+grep -E 'EnableResizableBar|RegistryDwords' /proc/driver/nvidia/params
+```
  - EnableResizableBar: 1
  - ForceP2P=0x11
  - RMForceP2PType=1
  - RMPcieP2PType=2
- -GrdmaPciTopoCheckOverride=1
+ - GrdmaPciTopoCheckOverride=1
 
 options nvidia NVreg_RegistryDwords="ForceP2P=0x11;RMForceP2PType=1;RMPcieP2PType=2;GrdmaPciTopoCheckOverride=1;EnableResizableBar=1"
 
