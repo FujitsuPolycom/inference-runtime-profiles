@@ -16,10 +16,6 @@ replicated-indexer and sparse-decode overlays are disabled.
 | KV record format | 368 bytes, FP8 RoPE |
 | Served name | `GLM-5.2` |
 
-This is not the plain `lukealonso/GLM-5.2-NVFP4` checkpoint. That model is a
-base component of the hybrid checkpoint. The hybrid checkpoint retains all
-experts and uses the custom v20 serving stack.
-
 ## Reference hardware
 
 - 4x NVIDIA RTX PRO 6000 Blackwell, 96 GiB each
