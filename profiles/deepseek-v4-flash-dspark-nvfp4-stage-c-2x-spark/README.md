@@ -1,30 +1,52 @@
-# DeepSeek V4 Flash DSpark NVFP4 Stage C on Two DGX Spark Nodes
+# DeepSeek V4 Flash DSpark NVFP4 Stage C (2x Spark, 4x GPU)
 
 Sanitized representation of a production-oriented, memory-focused DeepSeek V4
 Flash DSpark profile for two Blackwell DGX Spark nodes connected over QSFP
 RDMA fabric.
 
-* TP2 / PP1 / DSpark MTP3 with probabilistic draft sampling
-* `nvfp4_ds_mla` KV cache with a fixed 10 GiB allocation per rank
-* 1,048,576-token request ceiling and an engine-reported 1,515,055-token
+## Model
+
+| Parameter | Value |
+|---|---|
+| Model ID | deepseek-ai/DeepSeek-V4-Flash-DSpark |
+| Quantization | NVFP4 |
+| Served name | DeepSeek-V4-Flash-NVFP4-StageC |
+| Tensor parallel | 2 (split across two Spark nodes) |
+| MTP | 3 |
+| Max context | 1,048,576 |
+| KV cache dtype | nvfp4_ds_mla |
+| Block size | 256 |
+| GPU memory utilization | 80% |
+
+## Hardware
+
+| Component | Configuration |
+|---|---|
+| GPUs | 2x NVIDIA GPUs per Spark node (2-node TP2) |
+| GPU topology | Two-node tensor parallel over RDMA fabric |
+| CUDA | CUDA 12.1a-class runtime |
+| Storage | NVMe-backed model/cache filesystem |
+| Parallelism | TP2 / DCP1 / MTP3 |
+
+## Key Features
+
+- TP2 / PP1 / DSpark MTP3 with probabilistic draft sampling
+- `nvfp4_ds_mla` KV cache with a fixed 10 GiB allocation per rank
+- 1,048,576-token request ceiling and an engine-reported 1,515,055-token
   usable shared KV pool
-* Eight sequence slots with an 8,192-token batch budget
-* CUDA graph capture size computed as `max_num_seqs * (mtp + 1)` = 32
-* Prefix caching, chunked prefill, asynchronous scheduling, and FlashInfer
+- Eight sequence slots with an 8,192-token batch budget
+- CUDA graph capture size computed as `max_num_seqs * (mtp + 1)` = 32
+- Prefix caching, chunked prefill, asynchronous scheduling, and FlashInfer
   autotuning enabled
-* RDMA transport via NCCL IB, with NCCL and Gloo pinned to the deployment's
+- RDMA transport via NCCL IB, with NCCL and Gloo pinned to the deployment's
   fabric interfaces through the private `.env`
-* B12x MoE and WO-projection paths enabled with tuned W4A16 block overrides
-* Triton MLA sparse attention with 256 MiB sparse-indexer logits budget
-* DSpark proposer patched via read-only bind mount of `dspark_proposer.py`
-* Reasoning parser `deepseek_v4` with explicit `reasoning_start_str`/`reasoning_end_str`
+- B12x MoE and WO-projection paths enabled with tuned W4A16 block overrides
+- Triton MLA sparse attention with 256 MiB sparse-indexer logits budget
+- DSpark proposer patched via read-only bind mount of `dspark_proposer.py`
+- Reasoning parser `deepseek_v4` with explicit `reasoning_start_str`/`reasoning_end_str`
   markers and `thinking: false` default chat template
 
-This profile intentionally does not include LMCache. Its target is long-lived
-agentic coding work where resident NVFP4 KV capacity is more valuable than a
-larger host-side prefix tier.
-
-## Applying The Template
+## Apply
 
 Copy `profile.env.example` to a private `.env` on both nodes. Use the same
 values on each node except `NODE_RANK`; set it to `0` on the fabric head and
@@ -35,12 +57,6 @@ location, `DSPARK_PROPOSER_PATH`, and image reference privately.
 The compose file uses `shm_size: 68719476736` (64 GiB) to accommodate the
 multi-node tensor-parallel collective buffers. Docker's default 64 MiB shared
 memory is insufficient and will cause NCCL timeouts.
-
-Start the peer first, then the head, with the same compose template and each
-node's private `.env`. The compose file is a launch template, not a complete
-cluster manager: it assumes a reachable RDMA fabric and existing local model
-cache.
-
 ## Key Environment Variables
 
 ### DSpark Speculative Decoding
@@ -89,9 +105,11 @@ cache.
 | `NCCL_IGNORE_CPU_AFFINITY` | 1 | Ignore CPU affinity for NCCL |
 | `NCCL_NVLS_ENABLE` | 0 | Disable NVLink SHARP |
 
-## Notes
+## Apply
 
-The recorded image is a locally built runtime tag, so the public template uses
-an image placeholder rather than claiming a registry-published digest. Review
-the generated compose configuration and benchmark the target hardware before
-promoting it to a default service.
+1. Copy `profile.env.example` to `.env` on both Spark nodes
+2. Replace all `REPLACE_WITH_*` placeholders
+3. Use the same values on both nodes except `NODE_RANK` (0 on head, 1 on peer)
+4. Set `MASTER_ADDR` to the head node IP
+5. Set `NCCL_IB_HCA` / `NCCL_SOCKET_IFNAME` / `GLOO_SOCKET_IFNAME` to match RDMA interface
+6. `docker compose up -d` on both nodes

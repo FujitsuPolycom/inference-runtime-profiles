@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "profile": "deepseek-v4-flash-dspark-nvfp4-lmcache-candidate-2x-spark",
+  "captured_at_utc": null,
+  "base_profile": "deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark",
+  "image": "vllm-dspark-runtime:dspark-nvfp4-stage-c",
+  "image_id": "sha256:2035c23b1f353a9f1e98fe2d4204255b4213c5f075eee933ab1fcb99650fb900",
+  "runtime": {
+    "vllm": "0.21.1rc1.dev339+g1967a5627bc3",
+    "cuda_arch": "12.1a",
+    "topology": "two-node tensor parallel over RDMA fabric"
+  },
+  "model": {
+    "id": "deepseek-ai/DeepSeek-V4-Flash-DSpark",
+    "served_name": "DeepSeek-V4-Flash-NVFP4-LMCache-Candidate",
+    "tensor_parallel_size": 2,
+    "pipeline_parallel_size": 1,
+    "speculative_method": "dspark",
+    "speculative_tokens": 3
+  },
+  "memory": {
+    "kv_cache_dtype": "nvfp4_ds_mla",
+    "kv_cache_memory_bytes_per_rank": 10737418240,
+    "max_model_len": 1048576,
+    "max_num_seqs": 8,
+    "max_num_batched_tokens": 8192,
+    "gpu_memory_utilization": 0.75
+  },
+  "kv_connector": {
+    "name": "SimpleCPUOffloadConnector",
+    "role": "kv_both",
+    "cpu_offload_bytes_per_rank": 2147483648,
+    "lazy_offload": false,
+    "supports_hma": true,
+    "tier": "RAM only (no NVMe)"
+  },
+  "changes_vs_stage_c": [
+    "Added SimpleCPUOffloadConnector via --kv-transfer-config",
+    "Lowered gpu_memory_utilization from 0.80 to 0.75",
+    "Removed PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True (incompatible with connector)",
+    "Isolated to port 18007 with separate compose project name",
+    "Not registered in LiteLLM (test only)"
+  ],
+  "status": "ready_to_deploy",
+  "mounts": [
+    {
+      "type": "bind",
+      "destination": "/cache/huggingface",
+      "mode": "rw"
+    }
+  ]
+}

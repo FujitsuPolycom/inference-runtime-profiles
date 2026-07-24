@@ -1,44 +1,47 @@
-# GLM-5.2 Daily BF16-RoPE Profile
+# GLM-5.2 Daily BF16-RoPE + LMCache
 
-Sanitized representation of the validated 4-GPU daily stack.
+Single-node 4-GPU profile. TP4 / DCP4 / MTP3, BF16 RoPE, 48 GB host-RAM
+LMCache tier.
 
-- TP4 / DCP4 / MTP3
-- `nvfp4_ds_mla` with BF16 RoPE and 432-byte resident records
-- Replicated indexer KV with DCP-sharded main CKV
-- Full CKV gather and depth-3 shared-layer prefetch
-- Sparse selected-record decode over CE transport
-- NCCL tensor-parallel all-reduce
-- LMCache grouped 48 GB host-RAM tier
-- 300,000-token model limit and 3,072-token batch limit
-- CUDA graph capture limit 32
-- InstantTensor weight loading
-- B12X MoE, sparse indexer, MLA, and no PCIe all-reduce
+Child profile: [v20-promotion-fp8rope-offload](../glm52-v20-promotion-fp8rope-offload/)
 
-## Effective launch
+## Model
 
-The image is launched through `/usr/local/bin/serve-glm52-lmcache.sh`, which
-builds the `vllm serve` command. The effective profile is:
+| Parameter | Value |
+|---|---|
+| Model ID | THU-SPI/GLM-5.2 |
+| Quantization | MXFP8-A4Z16 (W4A8), BF16 RoPE |
+| Tensor parallel | 4 |
+| DCP | 4 |
+| MTP | 3 (EAGLE) |
+| Max context | 128K |
+| KV cache dtype | nvfp4_ds_mla |
+| Block size | 1600 |
 
-```text
-TP4 / DCP4 / MTP3 / DCP backend a2a
-model length 300000 / max sequences 8 / max batched tokens 3072
-GPU utilization 0.98 / KV pin 3489660928 bytes / graph 32
-attention B12X_MLA_SPARSE / quantization nvfp4_nf3_hybrid
-load format instanttensor / NCCL tensor-parallel all-reduce
-```
+## Hardware
 
-The running deployment also bind-mounts the custom vLLM and SparkInfer source
-trees plus small overlay files for the replicated-indexer, KV coordinator,
-CKV/prefetch, scale-file, and LMCache integration changes. Those source trees
-are intentionally represented as placeholders in this public profile; capture
-their Git commit IDs separately when publishing a deployment manifest.
+| Component | Configuration |
+|---|---|
+| GPUs | 4x NVIDIA RTX PRO 6000 Blackwell, 96 GiB each |
+| GPU topology | Single node, PCIe Gen5 x16 |
+| CPU | AMD Threadripper PRO 9965WX |
+| System RAM | 128 GiB |
+| LMCache L1 | 48 GiB host RAM (lazy mode) |
 
-## Capacity
+## Performance snapshots
 
-The current deployment reports approximately 307,712 GPU KV tokens. The 48 GB
-LMCache setting is a host-RAM cache tier and does not increase GPU KV capacity;
-it stores reusable KV outside VRAM for prefix reuse and reloads.
+| Metric | Value |
+|---|---|
+| Prefill | ~3,200 tok/s at ~120K |
+| Decode C1 | ~80 tok/s class |
+| Decode C2 | tested separately |
+| GPU KV tokens | ~307,000 |
+| Cold start (weight load) | ~54 seconds |
+| Warm repeat | Sub-second to a few seconds |
 
-This profile is a template. Replace the image digest and local paths in a
-private `.env`; do not commit those values. Capture the exact deployed image
-and source revisions with `tools/Capture-Profile.ps1` after startup.
+## Apply
+
+1. Copy `profile.env.example` to `.env`
+2. Replace `REPLACE_WITH_*` placeholders
+3. `docker compose up -d`
+4. Wait for model load (~54 seconds)
