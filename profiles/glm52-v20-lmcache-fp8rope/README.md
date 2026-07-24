@@ -98,11 +98,6 @@ LMCACHE_USE_LAYERWISE=False
 LMCACHE_SAVE_DECODE_CACHE=False
 ```
 
-When the 48 GiB RAM tier is full, allocation warnings are expected while
-LMCache evicts or spills entries to the NVMe tier. Those warnings are not GPU
-OOMs. Confirm L2 activity from LMCache hit/prefetch messages and the mounted
-disk usage.
-
 ## Source lineage
 
 The exact source metadata for the live deployment is in [`manifest.json`](manifest.json).
