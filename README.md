@@ -82,11 +82,11 @@ Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB 
 
 #### GLM-5.2
 
-| Profile | Main use | KV / offload |
-|---|---|---|
-| [GLM-5.2 v20 + LMCache, FP8 RoPE](profiles/glm52-v20-lmcache-fp8rope/) | **Current live** grouped LMCache deployment | 368-byte FP8-RoPE, 48 GB RAM + 96 GB NVMe L2, 433,152 GPU KV tokens at 400,384 max context |
-| [GLM-5.2 daily v20, no LMCache](profiles/glm52-daily-v20-clean-no-lmcache/) | Clean v20 **2048-token baseline** | 432-byte BF16-RoPE, 482,560 GPU KV tokens |
-| [GLM-5.2 v20 + LMCache, BF16 RoPE](profiles/glm52-v20-lmcache-bf16rope/) | BF16-RoPE compatibility comparison | 432-byte BF16-RoPE, 48 GB RAM + 96 GB NVMe L2 |
+| Name | Link | KV type | Max available GPU KV | Max model length | Batch tokens |
+|---|---|---|---:|---:|---:|
+| Current live v20 + LMCache | [Open profile](profiles/glm52-v20-lmcache-fp8rope/) | `nvfp4_ds_mla`, FP8 RoPE, 368 B | 433,152 | 400,384 | 3,072 |
+| Clean v20 baseline | [Open profile](profiles/glm52-daily-v20-clean-no-lmcache/) | `nvfp4_ds_mla`, BF16 RoPE, 432 B | 482,560 | 262,144 | 2,048 |
+| v20 LMCache BF16 compatibility | [Open profile](profiles/glm52-v20-lmcache-bf16rope/) | `nvfp4_ds_mla`, BF16 RoPE, 432 B | 276,992 | 300,000 | 4,096 |
 
 ### 2x DGX Spark profiles
 
