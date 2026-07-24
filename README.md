@@ -15,6 +15,44 @@ mount paths, container IDs, and secret-looking values with placeholders.
 Review every generated `manifest.json` before publishing. The redactor is a
 guardrail, not a guarantee.
 
+## Important Hardware / Software Settings
+
+### NVIDIA PCIe P2P driver configuration
+
+The four-GPU RTX PRO 6000 Blackwell profiles depend on direct PCIe peer access.
+The published v20 launcher and `llm-inference-bench` both detect the recommended
+NVIDIA registry settings. On the reference host, the model started without them
+but decode performance fell from approximately **100 tok/s to 60 tok/s**.
+
+Create `/etc/modprobe.d/nvidia-p2p-override.conf`:
+
+```text
+options nvidia NVreg_RegistryDwords="ForceP2P=0x11;RMForceP2PType=1;RMPcieP2PType=2;GrdmaPciTopoCheckOverride=1;EnableResizableBar=1"
+```
+
+Apply the configuration:
+
+```bash
+update-initramfs -u
+reboot
+```
+
+Verify it after reboot:
+
+```bash
+grep -E 'EnableResizableBar|RegistryDwords' /proc/driver/nvidia/params
+```
+
+Expected values include `EnableResizableBar: 1` and all four registry entries
+above. `nvidia-smi` may show PCIe Gen1 while idle; verify Gen5 x16 under load.
+
+These values are specific to the tested NVIDIA PCIe workstation topology. Keep
+console access available, verify peer connectivity after reboot, and do not
+blindly apply them to unrelated hardware or driver versions. See
+[HARDWARE.md](HARDWARE.md) and the
+[clean v20 daily profile](profiles/glm52-daily-v20-clean-no-lmcache/) for the
+reference configuration and measured comparison.
+
 ## Layout
 
 ```text
@@ -30,13 +68,14 @@ profiles/<profile-name>/
 
 ### 4x GPU profiles
 
-Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The daily profile uses a **48 GB host-RAM LMCache tier**; NVMe is not automatically part of that tier. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
+Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The current daily profile is clean v20 with no external KV tier; the former 48 GB host-RAM LMCache configuration remains available as a legacy profile. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
 
 #### GLM-5.2
 
 | Profile | Main use | KV / offload |
 |---|---|---|
-| [GLM-5.2 daily BF16-RoPE + LMCache](profiles/glm52-daily-bf16rope-lmcache/) | Validated daily TP4/DCP4/MTP3 stack | 432-byte BF16-RoPE, 48 GB RAM tier |
+| [GLM-5.2 daily v20, no LMCache](profiles/glm52-daily-v20-clean-no-lmcache/) | **Current daily** published v20 TP4/DCP4/MTP3 stack | 432-byte BF16-RoPE, 482,560 GPU KV tokens |
+| [GLM-5.2 legacy BF16-RoPE + LMCache](profiles/glm52-daily-bf16rope-lmcache/) | Previous enhanced v19 daily stack | 432-byte BF16-RoPE, 48 GB RAM tier |
 | [GLM-5.2 v20 FP8-RoPE promotion](profiles/glm52-v20-promotion-fp8rope-offload/) | Separate v20/Grid188/offload candidate | 368-byte FP8-RoPE, DRAM + NVMe tier |
 
 #### DeepSeek V4 Flash

@@ -1,0 +1,40 @@
+{
+  "profile": "glm52-daily-v20-clean-no-lmcache",
+  "status": "daily",
+  "captured_at": "2026-07-23",
+  "hardware": {
+    "gpu": "4x NVIDIA RTX PRO 6000 Blackwell, 96 GiB, 400 W",
+    "cpu": "AMD Threadripper PRO 9965WX",
+    "system_ram_gib": 128,
+    "gpu_link": "PCIe Gen5 x16"
+  },
+  "runtime": {
+    "image": "voipmonitor/vllm:gilded-gnosis-v20-vllm7e3bee1-si6234185-fi801d57a-cu132-20260723",
+    "vllm_commit": "7e3bee1ed4bc87efbdc36060647a3475cfaa1f1e",
+    "b12x_commit": "62341856cc5497d0c8ba33012dab6118925a6cfb",
+    "flashinfer_commit": "801d57a08958c13d375ddbb6be3be4808f48a708",
+    "cuda": "13.2.1",
+    "torch": "2.12.0+cu132",
+    "nccl": "2.30.4"
+  },
+  "model": {
+    "family": "glm52-hybrid",
+    "parallelism": "TP4/DCP4/MTP3",
+    "max_model_len": 262144,
+    "max_num_seqs": 8,
+    "max_num_batched_tokens": 2048,
+    "graph": 64,
+    "kv_cache_dtype": "nvfp4_ds_mla",
+    "kv_fp8_rope": false,
+    "reported_kv_tokens": 482560
+  },
+  "offload": {
+    "lmcache": false,
+    "nvme": false
+  },
+  "host_requirements": {
+    "nvidia_p2p_registry_override": true,
+    "resizable_bar": true
+  }
+}
+

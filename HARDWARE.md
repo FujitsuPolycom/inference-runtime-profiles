@@ -14,6 +14,37 @@ single-node system.
 | Storage | NVMe-backed model/cache filesystem; capacity and free space vary |
 | Parallelism | Typical GLM run: TP4 / DCP4 / MTP3 |
 
+## Critical NVIDIA P2P settings
+
+The reference host requires the following NVIDIA registry values for the
+intended direct PCIe P2P path:
+
+```text
+ForceP2P=0x11
+RMForceP2PType=1
+RMPcieP2PType=2
+GrdmaPciTopoCheckOverride=1
+EnableResizableBar=1
+```
+
+They are persisted in `/etc/modprobe.d/nvidia-p2p-override.conf` as:
+
+```text
+options nvidia NVreg_RegistryDwords="ForceP2P=0x11;RMForceP2PType=1;RMPcieP2PType=2;GrdmaPciTopoCheckOverride=1;EnableResizableBar=1"
+```
+
+Changing NVIDIA module parameters requires `update-initramfs -u` and a reboot.
+After reboot, confirm the active values in `/proc/driver/nvidia/params`.
+
+The clean v20 A/B changed only this host state. C1 decode increased from 60.8
+to 103.4 tok/s at 8K and from 59.2 to 95.8 tok/s at 64K. Prefill at 64K
+remained effectively unchanged (3,007 versus 3,019 tok/s). This makes driver
+state part of every reproducible performance record, not an optional tuning
+detail.
+
+Do not copy these settings to a different GPU topology without console access
+and an explicit P2P validation plan.
+
 ## Reference timings
 
 These are operational expectations, not guarantees. Cold startup includes weight
@@ -33,6 +64,7 @@ whether the run is cold or warm. Compare only rows with identical profiles.
 
 | Profile/test | Prefill | C1 decode | C2 decode | GPU KV |
 |---|---:|---:|---:|---:|
+| Clean v20 daily, P2P settings active | 3,019 tok/s at 64K | 103.4 at 8K / 95.8 at 64K | 122.3 at 8K / 115.6 at 64K | 482,560 tokens |
 | Daily-style FP8-RoPE, TP4/DCP4/MTP3 | ~3.2k tok/s at ~120K | ~80 tok/s class | tested separately | ~307k tokens |
 | BF16-RoPE DCP comparison, sparse CE | n/a | 72.7 at 8K | 90.96 at 8K | 220,160 tokens |
 | BF16-RoPE DCP1 reference | n/a | 81.2 at 8K | n/a | 90,240 tokens |

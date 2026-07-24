@@ -1,0 +1,65 @@
+services:
+  inference:
+    image: ${IMAGE}
+    container_name: glm52-daily-v20-clean
+    restart: unless-stopped
+
+    entrypoint: ["/usr/local/bin/serve-gilded-gnosis.sh"]
+    network_mode: host
+    ipc: host
+    privileged: true
+    init: true
+    shm_size: 32gb
+    gpus: all
+
+    ulimits:
+      memlock: -1
+      stack: 67108864
+      nofile:
+        soft: 1048576
+        hard: 1048576
+
+    environment:
+      MODEL_FAMILY: glm52-hybrid
+      MODEL: /model
+      SERVED_MODEL_NAME: GLM-5.2
+      PORT: ${PORT}
+
+      GPUS: 0,1,2,3
+      TP: "4"
+      DCP: "4"
+      MTP: "3"
+
+      MAX_MODEL_LEN: "262144"
+      MAX_NUM_SEQS: "8"
+      MAX_BATCHED_TOKENS: "2048"
+      GRAPH: "64"
+      GPU_MEMORY_UTILIZATION: "0.96"
+
+      MOE_MODE: a16
+      QUANTIZATION: nvfp4_nf3_hybrid
+      ONLINE_QUANT: nf3-mxfp8
+      NF3_GRID188: "1"
+
+      KV_CACHE_DTYPE: nvfp4_ds_mla
+      KV_FP8_ROPE: "0"
+
+      DCP_BACKEND: a2a
+      DCP_A2A_MAX_TOKENS: "16"
+      DCP_A2A_LARGE_BACKEND: ag_rs
+      DCP_PREFILL_WORKSPACE: auto
+      DCP_QUERY_SPLIT: auto
+      DCP_CKV_GATHER: auto
+
+      B12X_PCIE_DMA: "1"
+      F8_DMA: "0"
+
+      HF_HOME: /hf-cache
+      XDG_CACHE_HOME: /cache
+      TMPDIR: /container-tmp
+
+    volumes:
+      - ${MODEL_DIR}:/model:ro
+      - ${CACHE_DIR}:/cache
+      - ${HF_CACHE_DIR}:/hf-cache
+      - ${TMP_DIR}:/container-tmp
