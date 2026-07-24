@@ -78,7 +78,7 @@ profiles/<profile-name>/
 
 ### 4x GPU profiles
 
-Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The current daily profile is clean v20 with no external KV tier; the former 48 GB host-RAM LMCache configuration remains available as a legacy profile. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
+Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM 6400 (8x16GB)**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The current daily profile is clean v20 with no external KV tier; the former 48 GB host-RAM LMCache configuration remains available as a legacy profile. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
 
 #### GLM-5.2
 
