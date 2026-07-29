@@ -28,16 +28,16 @@
     "gpu_memory_utilization": 0.96,
     "cuda_graph_max": 32,
     "kv_cache_dtype": "nvfp4_ds_mla",
-    "kv_fp8_rope": false,
-    "kv_record_bytes": 432,
-    "reported_max_gpu_kv_tokens": 694528,
-    "maximum_concurrency_at_max_model_len": 2.65
+    "kv_fp8_rope": true,
+    "kv_record_bytes": 368,
+    "reported_max_gpu_kv_tokens": 813568,
+    "maximum_concurrency_at_max_model_len": 3.10
   },
   "prefill": {
     "ckv_gather_enabled": true,
     "ckv_gather_min_tokens": 512,
     "ckv_gather_max_tokens": 262144,
-    "persistent_ckv_workspace_mib_per_gpu": 486.5,
+    "persistent_ckv_workspace_mib_per_gpu": 414.4,
     "exl3_prefill_chunk": 128,
     "trellis_arena_mib_per_gpu": 1054.2
   },
