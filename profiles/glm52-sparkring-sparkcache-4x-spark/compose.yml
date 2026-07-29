@@ -1,0 +1,146 @@
+services:
+  inference:
+    image: ${IMAGE}
+    container_name: glm52-sparkring
+    gpus: all
+    network_mode: host
+    ipc: host
+    shm_size: 10737418240
+    restart: "no"
+    cap_add:
+      - IPC_LOCK
+    ulimits:
+      memlock: -1
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    devices:
+      - /dev/infiniband:/dev/infiniband
+    environment:
+      EXPECTED_IMAGE_ID: ${EXPECTED_IMAGE_ID}
+      MODEL_PATH: /hybridmodel
+      HEAD_IP: ${HEAD_ADDR}
+      MASTER_ADDR: ${HEAD_ADDR}
+      MASTER_PORT: ${MASTER_PORT}
+      PORT: ${API_PORT}
+      NODE_RANK: ${NODE_RANK}
+      GLOO_SOCKET_IFNAME: ${MGMT_IFACE}
+      NCCL_SOCKET_IFNAME: ${MGMT_IFACE}
+
+      LD_PRELOAD: /opt/sparkring/libnccl-switchless.so.2
+      VLLM_NCCL_SO_PATH: /opt/sparkring/libnccl-switchless.so.2
+      VLLM_SPARK_NCCL_TRANSPORT_MODE: switchless_ib
+      VLLM_SPARK_SWITCHLESS_NCCL_SHA256: ${SWITCHLESS_NCCL_LIBRARY_SHA256}
+      NCCL_NET: IB
+      NCCL_IB_DISABLE: "0"
+      NCCL_IB_HCA: ${NCCL_IB_HCA}
+      NCCL_IB_GID_INDEX: ${NCCL_IB_GID_INDEX}
+      NCCL_IB_SUBNET_AWARE_ROUTING: "1"
+      NCCL_IB_SUBNET_PREFIX_LEN: "24"
+      NCCL_IB_MERGE_NICS: "0"
+      NCCL_CROSS_NIC: "1"
+      NCCL_ALGO: Ring
+      NCCL_SKIP_TREE_CONNECT: "1"
+      NCCL_MAX_NCHANNELS: "4"
+      NCCL_MIN_NCHANNELS: "4"
+      NCCL_CUMEM_ENABLE: "0"
+      NCCL_DEBUG: WARN
+
+      SPARK_TP4_LIBRARY: /opt/spark-transport/libspark_transport_capi.so
+      SPARK_TP4_LIBRARY_SHA256: ${SPARK_TRANSPORT_LIBRARY_SHA256}
+      SPARK_TP4_DEVICE0: ${SPARK_TP4_DEVICE0}
+      SPARK_TP4_DEVICE1: ${SPARK_TP4_DEVICE1}
+      SPARK_TP4_GID0: ${NCCL_IB_GID_INDEX}
+      SPARK_TP4_GID1: ${NCCL_IB_GID_INDEX}
+      SPARK_TP4_PEER0: ${SPARK_TP4_PEER0}
+      SPARK_TP4_PEER1: ${SPARK_TP4_PEER1}
+      SPARK_TP4_MAX_INFLIGHT: "64"
+      SPARK_TP4_DCP_COLLECTIVE_AUDIT: "1"
+      VLLM_SPARK_TP4_MODE: custom
+      VLLM_SPARK_TP4_GRAPH_Q1: "1"
+      VLLM_SPARK_TP4_ALLGATHER_MODE: custom
+      VLLM_SPARK_TP4_ALLGATHER_POLICY: spark-custom
+      VLLM_SPARK_TP4_VOCAB_MODE: custom
+      VLLM_SPARK_TP4_DCP_MODE: custom
+      VLLM_SPARK_TP4_DCP_QUERY_ENABLED: "1"
+      VLLM_SPARK_TP4_DCP_COMBINE_ENABLED: "1"
+      VLLM_SPARK_TP4_DCP_GRAPH_CUSTOM: "1"
+      SPARK_TP4_DCP_GRAPH_POLL_POLICY: adaptive-yield
+
+      VLLM_SPARK_DCP_SIZE: "4"
+      VLLM_SPARK_LOAD_FORMAT: safetensors
+      VLLM_SPARK_MAX_MODEL_LEN: "458752"
+      VLLM_SPARK_KV_CACHE_MEMORY_BYTES: "4000000000"
+      VLLM_SPARK_MAX_NUM_BATCHED_TOKENS: "4096"
+      VLLM_SPARK_MAX_NUM_SEQS: "8"
+      VLLM_SPARK_MAX_QUERY_ROWS: "40"
+      VLLM_SPARK_ENABLE_CUDAGRAPH: "1"
+      VLLM_SPARK_SHARED_CAPTURE_STREAM: "1"
+      VLLM_SPARK_DECODE_CAPTURE_SIZES: 1,2,3,4,5,6,8,10,12,15,16,20,24,25,30,32,35,40
+      VLLM_SPARK_GRAPH_CAPTURE_SIZES: 1,2,3,4,5,6,8,10,12,15,16,20,24,25,30,32,35,40
+      VLLM_SPARK_FULL_DECODE_CAPTURE_SIZES: ""
+      VLLM_SPARK_PREFILL_PIECEWISE_CAPTURE_SIZES: ""
+      VLLM_SPARK_TP4_PREFILL_Q512: "0"
+      GRAPH_STATUS_REPORT: "1"
+      SPARK_TP4_GRAPH_STATUS_PATH: /cache/jit/spark-graph-status-rank${NODE_RANK}.json
+
+      VLLM_SPARK_MTP_TOKENS: "4"
+      VLLM_SPARK_MTP_ADAPTIVE_WINDOW: "32"
+      VLLM_ADAPTIVE_SPEC_DEPTHS: 2,4
+      VLLM_SPARK_MTP_MODE_ID: adaptive-mtp2-4-window32
+      SPARK_ADAPTIVE_MTP_CONTROL: "0"
+      VLLM_SPARK_TRUE_ADAPTIVE_DRAFT: "0"
+      SPARK_GLM52_MTP_INDEX_REUSE: "1"
+      SPARK_Q2R_PROBE: "1"
+      SPARK_Q2R_PHASE_TIMING: "1"
+      SPARK_Q2R_SESSION_ID: ${Q2R_SESSION_ID}
+      SPARK_Q2R_SOURCE_BUNDLE_MANIFEST: ${SOURCE_BUNDLE_MANIFEST_SHA256}
+      SPARK_Q2R_CONFIG_SHA256: ${Q2R_CONFIG_SHA256}
+      SPARK_Q2R_IMAGE: ${EXPECTED_IMAGE_ID}
+      SPARK_Q2R_CHECKPOINT: aidendle94/GLM-5.2-MXFP4-Experts-GPTQ
+      SPARK_Q2R_RUNNER_SAMPLE_SHA256: ${Q2R_RUNNER_SAMPLE_SHA256}
+
+      VLLM_USE_V2_MODEL_RUNNER: "1"
+      VLLM_USE_B12X_MOE: "1"
+      VLLM_USE_B12X_SPARSE_INDEXER: "1"
+      VLLM_DCP_SHARD_DRAFT: "1"
+      VLLM_DCP_GLOBAL_TOPK: "1"
+      VLLM_DSV4_INDEXER_SP: "1"
+      VLLM_B12X_MLA_CKV_GATHER: "1"
+      VLLM_B12X_MLA_CKV_GATHER_MAX_TOKENS: "458752"
+      VLLM_B12X_MLA_DECODE_SPARSE_GATHER: "0"
+      VLLM_B12X_MLA_DECODE_GATHER_V2: "0"
+      B12X_NSA_CONTIGUOUS_PREFILL_BLOCK_K: auto
+      VLLM_SPARK_KV_SCALE_MODE: per-token
+      VLLM_NVFP4_MLA_PER_TOKEN_SCALE: "1"
+      VLLM_ALLOW_LONG_MAX_MODEL_LEN: "1"
+      VLLM_ENGINE_READY_TIMEOUT_S: "3600"
+      VLLM_EXECUTE_MODEL_TIMEOUT_SECONDS: "1800"
+      CUTE_DSL_ARCH: sm_121a
+      TORCH_CUDA_ARCH_LIST: 12.1a
+      XDG_CACHE_HOME: /cache/jit
+
+      SPARK_CONTEXT_CACHE_ENABLE: "1"
+      SPARK_CONTEXT_CACHE_ROOT: /cache/context
+      SPARK_CONTEXT_CACHE_MIN_SPAN: "1024"
+      SPARK_CONTEXT_CACHE_LOAD_THREADS: "1"
+      SPARK_CONTEXT_CACHE_NATIVE_RESTORE: "1"
+      SPARK_CONTEXT_CACHE_NATIVE_LIBRARY: /opt/sparkring/libspark_cache_placement.so
+      SPARK_CONTEXT_CACHE_NATIVE_LIBRARY_SHA256: ${SPARKCACHE_NATIVE_LIBRARY_SHA256}
+      SPARK_CONTEXT_CACHE_NATIVE_ARENA_BYTES: "268435456"
+      SPARK_CONTEXT_CACHE_NATIVE_IO_WORKERS: "8"
+
+    volumes:
+      - ${MODEL_DIR}:/hybridmodel:ro
+      - ${JIT_CACHE_DIR}:/cache/jit:rw
+      - ${CONTEXT_CACHE_DIR}:/cache/context:rw
+      - ${SPARKRING_SOURCE_DIR}:/opt/spark-vllm:ro
+      - ${SERVE_SCRIPT}:/opt/spark/serve-glm52-trace.sh:ro
+      - ${LOAD_PREFLIGHT_SCRIPT}:/opt/spark/glm52_load_format_preflight.py:ro
+      - ${SPARK_TRANSPORT_LIBRARY}:/opt/spark-transport/libspark_transport_capi.so:ro
+      - ${SPARKCACHE_NATIVE_LIBRARY}:/opt/sparkring/libspark_cache_placement.so:ro
+      - ${SWITCHLESS_NCCL_LIBRARY}:/opt/sparkring/libnccl-switchless.so.2:ro
+    entrypoint:
+      - bash
+      - /opt/spark/serve-glm52-trace.sh
+    command: []

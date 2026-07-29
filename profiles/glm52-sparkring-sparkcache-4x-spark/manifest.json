@@ -1,0 +1,127 @@
+{
+  "schema_version": 1,
+  "profile": "glm52-sparkring-sparkcache-4x-spark",
+  "status": "measured-live-v47-reference-with-public-v48-next-source",
+  "captured_at_utc": "2026-07-29T00:00:00Z",
+  "hardware": {
+    "nodes": 4,
+    "system": "NVIDIA DGX Spark",
+    "soc": "NVIDIA GB10",
+    "unified_memory_bytes_per_node": 137438953472,
+    "fabric": "switchless four-node ring; two direct ConnectX-7 200GbE RoCE links per node",
+    "management_plane": "independent management interface for SSH, Gloo, and NCCL bootstrap",
+    "optional_links": "10GbE diagonals present in the lab but not required or credited by this profile"
+  },
+  "image": {
+    "local_tag": "glm52final:instanttensor-0.1.9",
+    "image_id": "sha256:b501f296e54649555d7e397a12ad7803750f9949115064d81993622d549e62f3",
+    "registry_digest": null,
+    "note": "Reference image was locally built and was not published to a registry."
+  },
+  "runtime": {
+    "vllm": "0.11.2.dev279+eldritch.final.fcc6141.b12x284a2ea.fi25dd814.cu132.20260626",
+    "cuda": "13.2-class",
+    "cuda_arch": "sm_121a",
+    "public_sparkring_repository": "https://github.com/FujitsuPolycom/sparkring",
+    "public_sparkring_commit": "7840ce58794126c73f1076538938749aedb189b1",
+    "public_lane_status": "Transport, SparkCache, runtime builder, and public fail-closed patches are published; full reference vLLM overlay is not yet public.",
+    "live_source_bundle_manifest_sha256": "49e68461b35130beed1fd71f138bd2b75d4f9c087811e9a316dfe0f8f338118a",
+    "live_connector_sha256": "5e9b337626951b85a51ee2d27093663a2a06ae90eb11c3acbb33c3447fa42710",
+    "live_sparkcache_native_library_sha256": "79cba3fbcec7ae12bf04533b3ddc31054f70ad3bfe1e98a5e6c1aa182a62be64"
+  },
+  "model": {
+    "id": "aidendle94/GLM-5.2-MXFP4-Experts-GPTQ",
+    "served_name": "glm-5.2",
+    "weight_loader": "safetensors",
+    "tensor_parallel_size": 4,
+    "decode_context_parallel_size": 4,
+    "dcp_backend": "ag_rs",
+    "pipeline_parallel_size": 1,
+    "attention_backend": "B12X_MLA_SPARSE",
+    "speculative_method": "mtp",
+    "maximum_speculative_tokens": 4,
+    "adaptive_verification_depths": [
+      2,
+      4
+    ],
+    "adaptive_window": 32,
+    "true_adaptive_draft_enabled": false,
+    "prefix_caching": true
+  },
+  "memory": {
+    "kv_cache_dtype": "nvfp4_ds_mla",
+    "kv_scale_mode": "per-token",
+    "kv_cache_memory_bytes_per_rank": 4000000000,
+    "measured_logical_kv_capacity_tokens": 500224,
+    "max_model_len": 458752,
+    "max_num_batched_tokens": 4096,
+    "max_num_seqs": 8
+  },
+  "execution": {
+    "cuda_graph_mode": "FULL_AND_PIECEWISE",
+    "max_query_rows": 40,
+    "decode_capture_sizes": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      8,
+      10,
+      12,
+      15,
+      16,
+      20,
+      24,
+      25,
+      30,
+      32,
+      35,
+      40
+    ],
+    "prefill_q512_enabled": false,
+    "shared_capture_stream": true
+  },
+  "transport": {
+    "name": "SparkRing/SIRCL",
+    "topology": "four-rank switchless direct-cable ring",
+    "roce_gid_index": 3,
+    "nccl_net": "IB",
+    "nccl_algorithm": "Ring",
+    "nccl_cumem_enabled": false,
+    "nccl_subnet_aware_routing": true,
+    "custom_tp4_all_reduce": true,
+    "custom_vocabulary": true,
+    "custom_dcp_query": true,
+    "custom_dcp_combine": true,
+    "fallback": "checksum-pinned patched NCCL 2.30.7 switchless ring"
+  },
+  "sparse_attention": {
+    "indexer_sequence_parallel": true,
+    "global_topk": true,
+    "compressed_kv_gather": true,
+    "compressed_kv_gather_max_tokens": 458752,
+    "decode_sparse_gather": false,
+    "decode_gather_v2": false,
+    "contiguous_prefill_block_k": "auto"
+  },
+  "sparkcache": {
+    "live_generation": "v47",
+    "enabled": true,
+    "dcp_sharded": true,
+    "minimum_span_tokens": 1024,
+    "load_threads": 1,
+    "native_restore": true,
+    "native_arena_bytes": 268435456,
+    "native_io_workers": 8,
+    "public_next_generation": "v48-next",
+    "public_next_status": "published source, not yet live-deployed in this measured profile"
+  },
+  "privacy": {
+    "node_addresses": "redacted",
+    "management_credentials": "not captured",
+    "local_paths": "replaced with profile placeholders",
+    "raw_prompts_and_context_snapshots": "not included"
+  }
+}

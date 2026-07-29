@@ -76,7 +76,7 @@ profiles/<profile-name>/
 
 ## Profiles by GPU count
 
-### 4x GPU profiles
+### 4x RTX workstation profiles
 
 Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM 6400 (8x16GB)**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The maintained 4x GLM profile below is the current LMCache deployment and daily reference. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
 
@@ -86,6 +86,18 @@ Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB 
 |---|---|---|---:|---:|---:|
 | **Current v20 R7 EXL3 3.0 bpw** | [Open profile](profiles/glm52-v20-r7-exl3-3bpw/) | `nvfp4_ds_mla`, 432 B | 694,528 | 262,144 | 3,072 |
 | v20 + LMCache NF3 hybrid | [Open profile](profiles/glm52-v20-lmcache-fp8rope/) | `nvfp4_ds_mla`, FP8 RoPE, 368 B | 433,152 | 400,384 | 3,072 |
+
+### 4x DGX Spark profiles
+
+These profiles target multi-node GB10 clusters rather than a single PCIe
+workstation. Fabric topology, management-plane isolation, and per-rank
+attestation are part of the configuration.
+
+#### GLM-5.2
+
+| Profile | Main use | Parallelism / KV |
+|---|---|---|
+| [GLM-5.2 SparkRing + SparkCache, 4x Spark](profiles/glm52-sparkring-sparkcache-4x-spark/) | Switchless direct-cable GLM-5.2 serving with persistent context snapshots | TP4 / DCP4 / MTP4, `nvfp4_ds_mla`, 500,224-token measured pool |
 
 ### 2x DGX Spark profiles
 

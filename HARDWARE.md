@@ -1,7 +1,9 @@
-# Reference Rig
+# Reference Hardware
 
-All GLM profiles in this repository were developed and tested on this class of
-single-node system.
+The repository contains profiles for several hardware classes. Never transfer
+topology-specific settings between them without an explicit validation plan.
+
+## RTX workstation reference rig
 
 | Component | Reference configuration |
 |---|---|
@@ -72,6 +74,46 @@ whether the run is cold or warm. Compare only rows with identical profiles.
 
 The BF16 rows are an earlier controlled comparison and are included to show the
 DCP penalty/recovery shape; they are not a baseline for the FP8-RoPE profile.
+
+## Four-node DGX Spark reference cluster
+
+The SparkRing GLM-5.2 profile targets four independent DGX Spark systems
+connected without an Ethernet switch in the inference data path.
+
+| Component | Reference configuration |
+|---|---|
+| Nodes | 4x NVIDIA DGX Spark |
+| SoC | NVIDIA GB10 |
+| Memory | 128 GiB unified memory per node |
+| Inference fabric | Switchless ring; two direct ConnectX-7 200 GbE RoCE links per node |
+| Management plane | Independent interface for SSH, Gloo, and NCCL bootstrap |
+| Parallelism | TP4 / DCP4 (`ag_rs`) / PP1 / MTP4 |
+| Model | `aidendle94/GLM-5.2-MXFP4-Experts-GPTQ` |
+| KV | `nvfp4_ds_mla`, per-token scale, 4,000,000,000 bytes per rank |
+| Logical KV pool | 500,224 tokens measured; 458,752-token request ceiling |
+| Batch limits | 4,096 tokens / 8 sequences |
+
+### DGX Spark performance snapshot
+
+| Metric | Observation |
+|---|---:|
+| Uncached prefill | 844 / 876 / 830 / 832 / 796 tok/s at 8K / 16K / 32K / 64K / 128K |
+| C1 aggregate decode | 19.0-20.3 tok/s across 8K-128K |
+| C8 aggregate decode | 47.7-53.3 tok/s across 8K-128K |
+| Workload-dependent C8 window | 66.3 aggregate tok/s |
+
+The main table is client-observed end-to-end serving. Most prefill context
+lengths are single-sample scouts. The 66.3 tok/s figure is a short
+workload-dependent server window, not the controlled baseline.
+
+The two RoCE ports are inference links, not management links. Preserve
+independent management access and verify each direct cable bidirectionally
+before launching the four-rank communicator. Optional 10 GbE diagonal links
+are not required by the published profile and receive no performance credit.
+
+See the
+[GLM-5.2 SparkRing + SparkCache profile](profiles/glm52-sparkring-sparkcache-4x-spark/)
+for exact runtime settings, source-status caveats, and cache measurements.
 
 ## Interpretation
 
