@@ -1,0 +1,51 @@
+{
+  "profile": "glm52-v20-r7-exl3-3bpw",
+  "status": "verified-live",
+  "captured_at": "2026-07-28",
+  "hardware": {
+    "gpu": "4x NVIDIA RTX PRO 6000 Blackwell, 96 GiB each",
+    "cpu": "AMD Threadripper PRO 9965WX",
+    "system_ram_gib": 128,
+    "gpu_link": "PCIe Gen5 x16-class"
+  },
+  "runtime": {
+    "image": "voipmonitor/vllm@sha256:fdc107c917f5ce7c7f78a51a2b76b171a0eb25569be58c1284809e7e6ba33482",
+    "version": "gilded.gnosis.v20 R7",
+    "vllm_commit": "936ed48",
+    "b12x_sparkinfer_commit": "f532ec9",
+    "flashinfer_commit": "801d57a",
+    "cuda": "13.2",
+    "nccl": "2.30.4"
+  },
+  "model": {
+    "repository": "brandonmusic/GLM-5.2-EXL3-TR3-3.0bpw",
+    "served_name": "GLM-5.2-EXL3-TR3-3.0bpw",
+    "quantization": "EXL3 3.0 bpw",
+    "parallelism": "TP4/DCP4/MTP3",
+    "max_model_len": 262144,
+    "max_num_seqs": 8,
+    "max_num_batched_tokens": 3072,
+    "gpu_memory_utilization": 0.96,
+    "cuda_graph_max": 32,
+    "kv_cache_dtype": "nvfp4_ds_mla",
+    "kv_fp8_rope": false,
+    "kv_record_bytes": 432,
+    "reported_max_gpu_kv_tokens": 694528,
+    "maximum_concurrency_at_max_model_len": 2.65
+  },
+  "prefill": {
+    "ckv_gather_enabled": true,
+    "ckv_gather_min_tokens": 512,
+    "ckv_gather_max_tokens": 262144,
+    "persistent_ckv_workspace_mib_per_gpu": 486.5,
+    "exl3_prefill_chunk": 128,
+    "trellis_arena_mib_per_gpu": 1054.2
+  },
+  "offload": {
+    "lmcache": false
+  },
+  "host_requirements": {
+    "nvidia_p2p_registry_override": true,
+    "resizable_bar": true
+  }
+}

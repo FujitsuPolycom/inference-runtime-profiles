@@ -1,0 +1,117 @@
+services:
+  inference:
+    image: ${IMAGE_DIGEST}
+    restart: unless-stopped
+    network_mode: host
+    ipc: host
+    privileged: true
+    init: true
+    shm_size: 32gb
+    gpus: all
+    ulimits:
+      memlock: -1
+      stack: 67108864
+      nofile:
+        soft: 1048576
+        hard: 1048576
+    environment:
+      CUDA_VISIBLE_DEVICES: 3,1,2,0
+      CUDA_DEVICE_ORDER: PCI_BUS_ID
+      CUDA_DEVICE_MAX_CONNECTIONS: "32"
+      CUTE_DSL_ARCH: sm_120a
+      TORCH_CUDA_ARCH_LIST: 12.0a
+      FLASHINFER_CUDA_ARCH_LIST: 12.0f
+      FLASHINFER_DISABLE_VERSION_CHECK: "1"
+      OMP_NUM_THREADS: "16"
+      PYTORCH_CUDA_ALLOC_CONF: expandable_segments:True
+      SAFETENSORS_FAST_GPU: "1"
+      NCCL_IB_DISABLE: "1"
+      NCCL_P2P_LEVEL: SYS
+      NCCL_PROTO: LL,LL128,Simple
+      VLLM_USE_FLASHINFER_SAMPLER: "1"
+      VLLM_USE_B12X_FP8_GEMM: "1"
+      VLLM_USE_B12X_SPARSE_INDEXER: "1"
+      VLLM_USE_B12X_MOE: "1"
+      VLLM_USE_V2_MODEL_RUNNER: "1"
+      VLLM_ENABLE_PCIE_ALLREDUCE: "1"
+      VLLM_PCIE_ALLREDUCE_BACKEND: b12x
+      VLLM_PCIE_ONESHOT_ALLREDUCE_MAX_SIZE: 64KB
+      VLLM_PCIE_ONESHOT_FUSED_ADD_RMS_NORM_MAX_SIZE: 84KB
+      VLLM_PCIE_DMA_FP8: ag
+      B12X_PCIE_DMA_FP8: ag
+      VLLM_CPP_AR_1STAGE_NCCL_CUTOFF: 56KB
+      VLLM_CPP_AR_IGNORE_CUTOFF_MAX_ROWS: "0"
+      VLLM_RTX6K_FUSED_ALLREDUCE_ADD: "0"
+      VLLM_RTX6K_FUSED_ALLREDUCE_ADD_END_BARRIER: "0"
+      VLLM_USE_AOT_COMPILE: "1"
+      VLLM_USE_BREAKABLE_CUDAGRAPH: "0"
+      VLLM_USE_FUSED_MOE_GROUPED_TOPK: "1"
+      VLLM_USE_B12X_MHC: "1"
+      B12X_MHC_MAX_TOKENS: "16384"
+      VLLM_USE_B12X_WO_PROJECTION: "1"
+      B12X_MLA_SM120_UNIFIED: "1"
+      B12X_DENSE_SPLITK_TURBO: "1"
+      B12X_W4A16_TC_DECODE: "1"
+      B12X_MOE_FORCE_A16: "1"
+      VLLM_DISABLE_SHARED_EXPERTS_STREAM: "1"
+      VLLM_DISABLED_KERNELS: MarlinFP8ScaledMMLinearKernel
+      VLLM_B12X_MLA_SPEC_EXTEND_AS_DECODE: "0"
+      VLLM_B12X_MLA_SPEC_DECODE_MAX_Q: "8"
+      VLLM_USE_B12X_DCP_A2A: "1"
+      VLLM_DCP_A2A_MAX_TOKENS: "16"
+      VLLM_DCP_A2A_LARGE_BACKEND: ag_rs
+      VLLM_DCP_GLOBAL_TOPK: "1"
+      VLLM_DCP_SHARD_DRAFT: "1"
+      VLLM_DCP_QUERY_SPLIT: "0"
+      VLLM_B12X_MLA_CKV_GATHER: "1"
+      VLLM_B12X_MLA_CKV_GATHER_MIN_TOKENS: "512"
+      VLLM_B12X_MLA_CKV_GATHER_MAX_TOKENS: "262144"
+      VLLM_EXL3_TRELLIS_MIN_M: "4"
+      VLLM_EXL3_TRELLIS_MAX_M: "32"
+      VLLM_EXL3_TRELLIS_BLOCK_M: "8"
+      VLLM_EXL3_PREFILL_CHUNK: "128"
+      VLLM_CACHE_DIR: /cache/jit/vllm
+      TRITON_CACHE_DIR: /cache/jit/triton
+      TORCH_EXTENSIONS_DIR: /cache/jit/torch_extensions
+      TORCHINDUCTOR_CACHE_DIR: /cache/jit/torchinductor
+      FLASHINFER_WORKSPACE_BASE: /cache/jit/flashinfer
+      XDG_CACHE_HOME: /cache/jit
+      TVM_FFI_CACHE_DIR: /cache/jit/tvm-ffi
+      VLLM_MEMORY_PROFILE_INCLUDE_ATTN: "1"
+      VLLM_MEMORY_PROFILER_ESTIMATE_CUDAGRAPHS: "1"
+    volumes:
+      - ${MODEL_DIR}:/model:ro
+      - ${CACHE_DIR}:/cache:rw
+      - ${TMP_DIR}:/container-tmp
+    entrypoint: ["/bin/bash", "-lc"]
+    command:
+      - |
+        unset NCCL_GRAPH_FILE NCCL_GRAPH_DUMP_FILE VLLM_B12X_MLA_EXTEND_MAX_CHUNKS
+        exec vllm serve /model \
+          --served-model-name GLM-5.2-EXL3-TR3-3.0bpw \
+          --host 0.0.0.0 --port ${PORT} --trust-remote-code \
+          --tensor-parallel-size 4 \
+          --decode-context-parallel-size 4 \
+          --dcp-comm-backend a2a \
+          --dcp-kv-cache-interleave-size 64 \
+          --seed 0 \
+          --quantization exl3 \
+          --kv-cache-dtype nvfp4_ds_mla \
+          --attention-backend B12X_MLA_SPARSE \
+          --moe-backend b12x \
+          --load-format instanttensor \
+          --compilation-config '{"cudagraph_mode":"FULL_AND_PIECEWISE","cudagraph_capture_sizes":[4,8,12,16,20,24,28,32],"custom_ops":["all"],"pass_config":{"fuse_allreduce_rms":true}}' \
+          --gpu-memory-utilization 0.96 \
+          --max-model-len 262144 \
+          --max-num-seqs 8 \
+          --max-num-batched-tokens 3072 \
+          --max-cudagraph-capture-size 32 \
+          --enable-chunked-prefill \
+          --enable-prefix-caching \
+          --enable-auto-tool-choice \
+          --tool-call-parser glm47 \
+          --reasoning-parser glm45 \
+          --default-chat-template-kwargs '{"reasoning_effort":"high"}' \
+          --hf-overrides '{"use_index_cache":true,"index_topk_pattern":"FFFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSSFSSS"}' \
+          --no-async-scheduling \
+          --speculative-config '{"method":"mtp","num_speculative_tokens":3,"moe_backend":"triton","draft_sample_method":"greedy"}'

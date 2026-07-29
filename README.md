@@ -84,7 +84,8 @@ Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB 
 
 | Name | Link | KV type | Max available GPU KV | Max model length | Batch tokens |
 |---|---|---|---:|---:|---:|
-| **Current daily v20 + LMCache** | [Open profile](profiles/glm52-v20-lmcache-fp8rope/) | `nvfp4_ds_mla`, FP8 RoPE, 368 B | 433,152 | 400,384 | 3,072 |
+| **Current v20 R7 EXL3 3.0 bpw** | [Open profile](profiles/glm52-v20-r7-exl3-3bpw/) | `nvfp4_ds_mla`, 432 B | 694,528 | 262,144 | 3,072 |
+| v20 + LMCache NF3 hybrid | [Open profile](profiles/glm52-v20-lmcache-fp8rope/) | `nvfp4_ds_mla`, FP8 RoPE, 368 B | 433,152 | 400,384 | 3,072 |
 
 ### 2x DGX Spark profiles
 
