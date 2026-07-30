@@ -1,0 +1,75 @@
+{
+  "schema": "inference-runtime-profiles.serving-matrix/v1",
+  "classification": "controlled client-observed serving benchmark",
+  "created_at": "2026-07-28T00:01:50.243920",
+  "source": {
+    "basename": "glm52-live-20260727-233436.json",
+    "bytes": 130466,
+    "sha256": "5d18c7a31bc191cda72136583579b32dbf9a7a5cb94743294cecc464fec14daf",
+    "raw_artifact_published": false,
+    "reason": "Raw artifact contains private cluster addressing and hardware telemetry."
+  },
+  "runtime": {
+    "checkpoint": "aidendle94/GLM-5.2-MXFP4-Experts-GPTQ",
+    "tensor_parallel_size": 4,
+    "decode_context_parallel_size": 4,
+    "dcp_backend": "ag_rs",
+    "pipeline_parallel_size": 1,
+    "maximum_speculative_tokens": 4,
+    "adaptive_verification_depths": [2, 4],
+    "adaptive_window": 32,
+    "true_selected_depth_drafting": true,
+    "kv_cache_dtype": "nvfp4_ds_mla",
+    "kv_scale_mode": "per-token",
+    "kv_cache_memory_bytes_per_rank": 4000000000,
+    "measured_logical_kv_capacity_tokens": 500224,
+    "max_model_len": 458752,
+    "max_num_batched_tokens": 4096,
+    "max_num_seqs": 8,
+    "cuda_graph_mode": "FULL_AND_PIECEWISE",
+    "weight_loader": "safetensors"
+  },
+  "benchmark": {
+    "tool": "llm_decode_bench.py",
+    "tool_version": "0.4.31",
+    "decode_mode": "duration",
+    "duration_seconds_per_cell": 30,
+    "max_tokens": 2048,
+    "concurrency": [1, 2, 4, 8],
+    "contexts": [8192, 16384, 32768, 65536, 131072],
+    "unique_context_percent": 0,
+    "context_sharing": "100% shared",
+    "prefill_mode": "standalone_cold",
+    "aggregate_source": "openai_continuous_usage"
+  },
+  "prefill": {
+    "8192": {"prompt_tokens": 8198, "ttft_seconds": 9.711, "tokens_per_second": 844, "samples": 2},
+    "16384": {"prompt_tokens": 16225, "ttft_seconds": 18.531, "tokens_per_second": 876, "samples": 1},
+    "32768": {"prompt_tokens": 32314, "ttft_seconds": 38.937, "tokens_per_second": 830, "samples": 1},
+    "65536": {"prompt_tokens": 64492, "ttft_seconds": 77.469, "tokens_per_second": 832, "samples": 1},
+    "131072": {"prompt_tokens": 128852, "ttft_seconds": 161.953, "tokens_per_second": 796, "samples": 1}
+  },
+  "aggregate_decode_tokens_per_second": {
+    "8192": {"1": 20.333333, "2": 27.128032, "4": 40.487052, "8": 49.201235},
+    "16384": {"1": 18.976788, "2": 26.366667, "4": 37.945008, "8": 53.293956},
+    "32768": {"1": 20.331853, "2": 27.562734, "4": 38.619310, "8": 51.920318},
+    "65536": {"1": 20.333333, "2": 27.003543, "4": 39.404906, "8": 50.932303},
+    "131072": {"1": 19.741457, "2": 26.262086, "4": 37.208212, "8": 47.654354}
+  },
+  "gates": {
+    "decode_cells": 20,
+    "request_errors": 0,
+    "underfilled_cells": 0,
+    "capacity_limited_cells": 0,
+    "warmup_timeouts": 0,
+    "maximum_queued_requests": 0,
+    "minimum_measured_seconds": 29.672,
+    "maximum_measured_seconds": 30.0
+  },
+  "claim_boundaries": [
+    "Decode values are aggregate throughput, not per-user throughput.",
+    "Concurrency uses fully shared contexts and is not a unique-context capacity test.",
+    "The serving matrix predates the live v47 SparkCache overlay.",
+    "The later v47 deployment retained the core model, parallelism, memory, batch, graph, and fabric geometry but recorded true selected-depth drafting as disabled and is not the same atomic run."
+  ]
+}

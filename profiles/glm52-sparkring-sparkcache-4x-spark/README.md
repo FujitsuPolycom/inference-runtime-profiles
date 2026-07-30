@@ -6,8 +6,18 @@ Spark systems. The inference fabric is a switchless 200 GbE RoCE ring:
 each node uses both ConnectX-7 ports and no Ethernet switch carries model
 payloads.
 
-This profile records the live v47 deployment that produced the measurements in
-[RESULTS.md](RESULTS.md). It also points to the newer public
+This profile combines two explicitly separated evidence sets:
+
+1. a complete 20-cell serving matrix from the usable GPTQ RC1 configuration;
+2. SparkCache measurements from the later live v47 deployment.
+
+The two deployments used the same checkpoint, TP4/DCP4 layout, KV geometry,
+batch limits, CUDA-graph plan, and switchless fabric. The serving matrix
+predates the v47 SparkCache overlay, so it is not mislabeled as a cache-enabled
+benchmark. See [RESULTS.md](RESULTS.md) for the exact boundary and the
+machine-readable evidence record.
+
+This profile also points to the newer public
 [SparkRing](https://github.com/FujitsuPolycom/sparkring) source, but does not
 claim that the public builder reproduces the complete measured runtime yet.
 
