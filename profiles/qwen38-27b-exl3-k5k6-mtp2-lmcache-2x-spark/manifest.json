@@ -28,7 +28,7 @@
     "cuda_arch": "sm_121 (built with TORCH_CUDA_ARCH_LIST=12.0f family target)",
     "torch": "2.12.0+cu132",
     "exllamav3": "1.4.2 @ 5f3c537 + local aarch64 port",
-    "b12x": "1.2.4",
+    "b12x": "1.2.4 (pip/PyPI)",
     "ray": "2.57.0",
     "nccl": "2.30.7 patched (sparkring switchless-ring patches)",
     "nccl_library_sha256": "e69a8c240f45d10166bcd901d99db78bb63147adda66e586d8dd505c6d608b54",
@@ -40,7 +40,13 @@
       "vLLM #51113 port: mamba-align chunk splitting into the fork's diverged scheduler; prerequisite for safe prefix caching on this hybrid model",
       "vLLM #48425 port: per-group prefix-hit divergence reconcile; prevents stale-recurrent-state resume under KV-pressure eviction with a KV connector (LMCache issue 4247)",
       "lmcache 0.5.2 heartbeat fix: scheduler-side _ensure_heartbeat_started guards on `is not None` against a field initialized to {}, so heartbeats never start, servers reap the engine after ~2.5 minutes, and all subsequent lookups silently return 0 while stores keep working"
-    ]
+    ],
+    "engine_repository": "https://github.com/local-inference-lab/vllm",
+    "engine_base_commit_full": "fa033bd4e1b16d9d729ad94be2d87da5a13210ce",
+    "engine_pr318_head_commit": "2b96dad45b2c9a1dd59b4bf3f9f33b06cb70f42a",
+    "engine_tested_mirror": "https://github.com/FujitsuPolycom/vllm tag qwen38-tested-20260817 (tip 229effc810ee) \u2014 the exact tested tree incl. both ports; independent of the upstream PR's fate",
+    "recipe_repository_commit": "58982dd751038fea1676b6fdfaf3a4d8dc1dabcc",
+    "public_sparkring_commit": "4545c4ec4740f203d4f427db265414a34bd8f5db"
   },
   "model": {
     "id": "malaiwah/Qwen3.8-27B-EXL3-K5K6-hydrated",
@@ -72,7 +78,9 @@
     "mamba_cache_mode": "align",
     "kv_pool_tokens_note": "Varies ~2% per boot with allocator state (3,893,434-3,973,864 observed at 0.70). 0.40 yielded 1,842,455; 0.55 yielded 2,852,305.",
     "max_concurrency_at_max_model_len": 14.85,
-    "chat_template_default_reasoning_effort": "medium"
+    "chat_template_default_reasoning_effort": "medium",
+    "revision": "ab3a91a13813df8096cb4c1d560ed3669035d0cf",
+    "revision_note": "HF commit at test time; weight shards spot-verified byte-identical via LFS OIDs. The repo's model card changed during the campaign \u2014 pin the revision."
   },
   "kv_tier": {
     "connector": "LMCacheMPConnector",
@@ -89,7 +97,8 @@
     "heartbeat_interval_seconds": 10,
     "chunk_bytes_per_rank": 106496000,
     "l1_replay_ceiling_tokens": 118000,
-    "sizing_note": "A lookup counts an L2 hit only after staging chunks into L1, so a prefix larger than L1 returns zero hits silently. chunk bytes per rank = 65 layers x 2 x 1600 tokens x 512 B / TP; ~15,000 replayable tokens per GB of L1 at TP=2, ~7,500 at TP=1."
+    "sizing_note": "A lookup counts an L2 hit only after staging chunks into L1, so a prefix larger than L1 returns zero hits silently. chunk bytes per rank = 65 layers x 2 x 1600 tokens x 1024 B / TP; ~15,000 replayable tokens per GB of L1 at TP=2, ~7,500 at TP=1.",
+    "l2_capacity_gb": 200
   },
   "notable_env": {
     "VLLM_EXL3_GRAPH_DECODE": "1 (with --compilation-config cudagraph_mode=FULL_DECODE_ONLY)",
@@ -100,7 +109,9 @@
     "NCCL_MIN_NCHANNELS/NCCL_MAX_NCHANNELS": "2",
     "NCCL_IB_MERGE_NICS": "0",
     "NCCL_CROSS_NIC": "1",
-    "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:False"
+    "PYTORCH_CUDA_ALLOC_CONF": "expandable_segments:False",
+    "NCCL_ALGO": "Ring",
+    "NCCL_CUMEM_ENABLE": "0"
   },
   "benchmarks": {
     "harness": "local-inference-lab/llm-inference-bench",
@@ -131,7 +142,8 @@
       "16k": 1004,
       "32k": 918
     },
-    "mtp_accept_len": "2.5-2.65"
+    "mtp_accept_len": "2.5-2.65",
+    "single_stream_note": "256-token generations, short context, GPUMEM 0.40 era; the decode_matrix rows (30.9 @4k cc1) are 512-token windows at GPUMEM 0.70 \u2014 different conditions, both real."
   },
   "privacy": {
     "addresses": "placeholders only",
@@ -141,7 +153,12 @@
   "operational_notes": {
     "restart_order": "kill engine -> cycle lmcache servers -> start engine. The MP servers hold the engine's KV cache through CUDA IPC and do not release it when the engine exits (69 GB observed held by a 4.8 GB-RSS process), so an engine-only restart can fail with 'Free memory on device cuda:0 ... less than desired GPU memory utilization'.",
     "launcher": "scripts/start-stack.sh in the recipe repository gates every precondition (ray GPUs free, cache servers listening, heartbeat patch present, weights and patched NCCL on both ranks) and verifies the engine answered before exiting 0.",
-    "power_recovery": "After a power event the containers restart but rank 0 loses GPU access ('Failed to initialize NVML') and needs `docker restart`; then re-add rail /24s, ray head, ray worker, cache servers, engine.",
+    "power_recovery": "Prevention: sudo nvidia-ctk system create-dev-char-symlinks --create-all at boot (nvidia-container-toolkit#48). Recovery if it bites anyway: docker restart the serving container ('Failed to initialize NVML'), re-add rail /24s, ray head, ray worker, cycle cache servers, engine \u2014 encoded in the recipe's boot scripts.",
     "single_node": "TP=1 runs the same stack on one Spark (drops ray, striping, rank-1 cache server). Measured: KV pool 1,669,678 tokens; decode 23.8/43.1/85.2 at 4k ctx and 22.2/42.0/85.3 at 16k for cc1/2/4; prefill 330/398/446/667 at 4k/8k/16k/32k. The LMCache chunk doubles to 213 MB since one node holds every KV head, so L1 must double for the same replay length; lower --max-num-seqs from 64 to suit the smaller pool."
+  },
+  "chat_template": {
+    "file": "scripts/chat_template_agentic.jinja (recipe repo)",
+    "sha256": "4f9201169f5bacd1a494c8824470a1ef899c7024d23a2b166e42493e7efd9ac9",
+    "default_reasoning_effort": "medium"
   }
 }

@@ -5,7 +5,7 @@ Sanitized runs on the reference DGX Spark pair, TP2 / MTP2 / FP8 KV / two-rail s
 Greedy (`temperature 0`) throughout. Harness: `local-inference-lab/llm-inference-bench`,
 plus direct endpoint timings where noted.
 
-**Note on `gpu_memory_utilization`:** the throughput figures below were measured at 0.40
+**Note on `gpu_memory_utilization`:** the decode ladder, 256-token concurrency row, domain battery and prefill ladder below were measured at 0.40
 (KV pool 1,842,455 tokens). The profile now ships 0.70, which raises the pool to ~3.9M tokens
 and the 262K-context concurrency ceiling from 7.03x to 14.85x. Decode and prefill rates are
 unchanged by that bump — it buys KV residency, not speed. Cells needing more than 1.84M tokens
@@ -107,7 +107,7 @@ decode was gated on a 3-of-3 exact-match check against eager before adoption. No
 suite has been run on this hardware; the checkpoint's published 0.00276 was measured elsewhere,
 on different silicon and a different runtime revision.
 
-## Decode matrix (20s windows, greedy)
+## Decode matrix (20s windows, greedy — measured at GPUMEM 0.70)
 
 | context | cc1 | cc2 | cc4 |
 |---|---:|---:|---:|

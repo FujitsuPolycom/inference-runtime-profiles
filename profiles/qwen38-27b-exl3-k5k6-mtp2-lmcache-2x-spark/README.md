@@ -16,7 +16,7 @@ than the NVFP4 builds commonly run on this hardware, at 27 tok/s single-stream.
 |---|---|
 | Model ID | malaiwah/Qwen3.8-27B-EXL3-K5K6-hydrated |
 | Base | Qwen/Qwen3.8-27B @ `1d4bf0f` (hybrid: 48 GatedDeltaNet + 16 full-attention layers, vision tower, MTP head) |
-| Quantization | EXL3 — MLP gate/up K5, down K6; attention K6; lm_head K6; quantized MTP head; BF16 embeddings + vision. 21.61 GB |
+| Quantization | EXL3 — MLP gate/up K5, down K6; attention K6; lm_head K6; quantized MTP head; BF16 embeddings + vision. 21.61 GiB (23.2 GB) |
 | Served name | qwen38 |
 | Tensor parallel | 2 (one GPU per node, ray executor) |
 | MTP | 2 (throughput mode; 3 = interactive alternative, +6% single-stream / −4% at 64 streams) |

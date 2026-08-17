@@ -136,6 +136,8 @@ services:
       # backend and crashes without the one inside speculative-config.
       - --attention-backend
       - TRITON_ATTN
+      - --mm-processor-kwargs
+      - '{"truncation":false}'
       - --mm-encoder-attn-backend
       - TORCH_SDPA
       - --speculative-config
