@@ -111,6 +111,12 @@ Spark systems. They should not be treated as interchangeable launch recipes.
 | [DeepSeek V4 Flash DSpark NVFP4 Stage C, 2x Spark](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | Two-node long-context DeepSeek profile | `nvfp4_ds_mla`, TP2, MTP3, 1M request ceiling |
 | [DeepSeek V4 Flash DSpark NVFP4 LMCache Candidate](profiles/deepseek-v4-flash-dspark-nvfp4-lmcache-candidate-2x-spark/) | Test build with SimpleCPUOffloadConnector (CPU RAM KV offload) | CPU RAM offload, TP2, MTP3 |
 
+#### Qwen3.8-27B
+
+| Profile | Main use | KV / offload |
+|---|---|---|
+| [Qwen3.8-27B EXL3 K5/K6 MTP2 + LMCache, 2x Spark](profiles/qwen38-27b-exl3-k5k6-mtp2-lmcache-2x-spark/) | Near-BF16 EXL3 lane (0.00276 KLD) with two-rail RoCE striping | FP8 KV, TP2, MTP2, 1,775,911-token pool, LMCache L1 + NVMe L2 |
+
 ### 1x GPU profile
 
 | Profile | Main use | KV / offload |
