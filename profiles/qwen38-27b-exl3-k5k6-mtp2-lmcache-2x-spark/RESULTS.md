@@ -106,3 +106,28 @@ across engine restarts, across cache-server restarts, and before/after each patc
 decode was gated on a 3-of-3 exact-match check against eager before adoption. No fidelity (KLD)
 suite has been run on this hardware; the checkpoint's published 0.00276 was measured elsewhere,
 on different silicon and a different runtime revision.
+
+## Decode matrix (20s windows, greedy)
+
+| context | cc1 | cc2 | cc4 |
+|---|---:|---:|---:|
+| 4k | 30.9 | 55.7 | 101.7 |
+| 16k | 32.2 | 57.8 | 105.6 |
+
+Standalone prefill, fresh contexts: 1,085 / 1,064 / 1,004 / 918 tok/s at 4k / 8k / 16k / 32k.
+MTP acceptance 2.5-2.65 tokens per step throughout.
+
+## Single node (TP=1)
+
+Same stack on one Spark, KV pool 1,669,678 tokens:
+
+| context | cc1 | cc2 | cc4 |
+|---|---:|---:|---:|
+| 4k | 23.8 | 43.1 | 85.2 |
+| 16k | 22.2 | 42.0 | 85.3 |
+
+Prefill 330 / 398 / 446 / 667 tok/s at 4k / 8k / 16k / 32k — throughput rises with context because
+fixed per-request overhead dominates at these sizes and amortizes as prompts grow.
+
+The LMCache chunk is 212,992,000 bytes at TP=1 versus 106,496,000 at TP=2, since one node holds
+every KV head. L1 must be sized accordingly or replays longer than it can stage return zero hits.

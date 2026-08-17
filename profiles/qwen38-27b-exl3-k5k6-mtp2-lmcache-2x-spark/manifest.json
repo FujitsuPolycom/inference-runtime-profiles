@@ -80,13 +80,16 @@
     "load_failure_policy": "recompute",
     "topology": "one lmcache MP server per rank (port 6556), lmcache_driven transfer mode",
     "chunk_size": 1600,
-    "l1_size_gb": 4,
+    "l1_size_gb": 8,
     "l1_lazy": true,
     "l2_adapter": "fs_native on NVMe, use_odirect false, LRU",
     "gpu_workers": 2,
     "cpu_workers": 2,
     "mq_timeout_seconds": 60,
-    "heartbeat_interval_seconds": 10
+    "heartbeat_interval_seconds": 10,
+    "chunk_bytes_per_rank": 106496000,
+    "l1_replay_ceiling_tokens": 118000,
+    "sizing_note": "A lookup counts an L2 hit only after staging chunks into L1, so a prefix larger than L1 returns zero hits silently. chunk bytes per rank = 65 layers x 2 x 1600 tokens x 512 B / TP; ~15,000 replayable tokens per GB of L1 at TP=2, ~7,500 at TP=1."
   },
   "notable_env": {
     "VLLM_EXL3_GRAPH_DECODE": "1 (with --compilation-config cudagraph_mode=FULL_DECODE_ONLY)",
@@ -108,7 +111,27 @@
     "cold_prefill_tok_s_without_lmcache_batch_constraint": 1500,
     "replay_speedup_after_engine_restart": "7.4x",
     "replay_speedup_after_engine_and_server_restart": "7.2x (chunks served from NVMe)",
-    "notes": "Greedy throughout; outputs byte-identical across cold, warm, engine-restart and server-restart states. See RESULTS.md."
+    "notes": "Greedy throughout; outputs byte-identical across cold, warm, engine-restart and server-restart states. See RESULTS.md.",
+    "decode_matrix_tok_s": {
+      "note": "greedy, GPUMEM 0.70, BATCHTOK 3072, LMCache on, 20s windows",
+      "ctx4k": {
+        "cc1": 30.9,
+        "cc2": 55.7,
+        "cc4": 101.7
+      },
+      "ctx16k": {
+        "cc1": 32.2,
+        "cc2": 57.8,
+        "cc4": 105.6
+      }
+    },
+    "standalone_prefill_tok_s": {
+      "4k": 1085,
+      "8k": 1064,
+      "16k": 1004,
+      "32k": 918
+    },
+    "mtp_accept_len": "2.5-2.65"
   },
   "privacy": {
     "addresses": "placeholders only",
@@ -119,6 +142,6 @@
     "restart_order": "kill engine -> cycle lmcache servers -> start engine. The MP servers hold the engine's KV cache through CUDA IPC and do not release it when the engine exits (69 GB observed held by a 4.8 GB-RSS process), so an engine-only restart can fail with 'Free memory on device cuda:0 ... less than desired GPU memory utilization'.",
     "launcher": "scripts/start-stack.sh in the recipe repository gates every precondition (ray GPUs free, cache servers listening, heartbeat patch present, weights and patched NCCL on both ranks) and verifies the engine answered before exiting 0.",
     "power_recovery": "After a power event the containers restart but rank 0 loses GPU access ('Failed to initialize NVML') and needs `docker restart`; then re-add rail /24s, ray head, ray worker, cache servers, engine.",
-    "single_node": "TP=1 runs the same stack on one Spark (drops ray, striping, rank-1 cache server)."
+    "single_node": "TP=1 runs the same stack on one Spark (drops ray, striping, rank-1 cache server). Measured: KV pool 1,669,678 tokens; decode 23.8/43.1/85.2 at 4k ctx and 22.2/42.0/85.3 at 16k for cc1/2/4; prefill 330/398/446/667 at 4k/8k/16k/32k. The LMCache chunk doubles to 213 MB since one node holds every KV head, so L1 must double for the same replay length; lower --max-num-seqs from 64 to suit the smaller pool."
   }
 }
