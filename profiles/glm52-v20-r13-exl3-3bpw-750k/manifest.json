@@ -1,0 +1,64 @@
+{
+  "profile": "glm52-v20-r13-exl3-3bpw-750k",
+  "status": "live-captured",
+  "captured_at": "2026-08-17",
+  "hardware": {
+    "gpu": "4x NVIDIA RTX PRO 6000 Blackwell Workstation Edition, 97887 MiB each",
+    "cpu": "AMD Ryzen Threadripper PRO 9965WX, 24C/48T",
+    "system_ram_gib": 125,
+    "gpu_topology": "single NUMA node; all GPU pairs report NODE"
+  },
+  "runtime": {
+    "image": "voipmonitor/vllm@sha256:02796036c96a52fda0919aa260c45c70bc97d8e662a6ae5e614b5f987c20851b",
+    "release": "Gilded Gnosis v20 r13",
+    "vllm_version": "0.11.2.dev280+gilded.gnosis.v20.vllm69ba80b.sia2ea608.fi801d57a.cu132.20260730.r13",
+    "vllm_base_commit": "f978d009fab996617f9a3cadef36ce727bcd83cd",
+    "vllm_composed_tree": "69ba80b9e49b5ad6740f8b3d5d0e592213b25959",
+    "b12x_base_commit": "36cade0bd8d87a26b7eb2fc8cc46188496465a06",
+    "b12x_composed_tree": "a2ea6083713c15dcf7e2d2bcc74fbece837ff84d",
+    "exllamav3_commit": "704aefd743b390af4bd0fb429d1906f9b964c7d8",
+    "flashinfer_commit": "801d57a08958c13d375ddbb6be3be4808f48a708",
+    "torch": "2.12.0+cu132",
+    "cuda": "13.2.1",
+    "nccl": "2.30.4"
+  },
+  "model": {
+    "repository": "brandonmusic/GLM-5.2-EXL3-TR3-3.0bpw",
+    "served_name": "GLM-5.2-EXL3-TR3-3.0bpw",
+    "quantization": "EXL3 3.0 bpw",
+    "parallelism": "TP4/DCP4/MTP3",
+    "max_model_len": 750000,
+    "max_num_seqs": 8,
+    "max_num_batched_tokens": 3072,
+    "gpu_memory_utilization": 0.96,
+    "cuda_graph_max": 32,
+    "kv_cache_dtype": "nvfp4_ds_mla",
+    "kv_fp8_rope": true,
+    "kv_record_bytes": 368,
+    "reported_max_gpu_kv_tokens": 831911,
+    "maximum_concurrency_at_max_model_len": 1.11,
+    "model_tree_size_gib": 329,
+    "config_sha256": "e36a632a8eaa6a98a318483dfcdb615ff2be9794a1f772800f144aa000da5c62",
+    "generation_config_sha256": "ac76b43d8683d3b930126870fc8be73d8679308fe752fa1f381096d8354f6a55"
+  },
+  "prefill": {
+    "ckv_gather_enabled": true,
+    "ckv_gather_min_tokens": 512,
+    "ckv_gather_max_tokens": 262144,
+    "query_split": false,
+    "exl3_prefill_chunk": 128,
+    "trellis": {"min_m": 4, "max_m": 32, "block_m": 8}
+  },
+  "cache": {
+    "vllm_prefix_caching": true,
+    "lmcache_external_tier": false,
+    "jit_cache_size_gib_at_capture": 3.9,
+    "jit_cache_fingerprint": "vllmf978d009fa-b12x36cade0bd8-c7b723e0fea550e8"
+  },
+  "host_policy": {
+    "resizable_bar": true,
+    "power_cap_watts_per_gpu": 400,
+    "p0_memory_clock_offset": 1000,
+    "core_clock_offset": 0
+  }
+}

@@ -84,6 +84,7 @@ Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB 
 
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
 |---|---|---:|---:|---:|---:|---|---|---|
+| [**Live v20 R13 EXL3 3.0 bpw, 750k ceiling**](profiles/glm52-v20-r13-exl3-3bpw-750k/) | GLM-5.2 EXL3 3.0 bpw · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 750,000 | 831,911 | 3,072 | 8 | TP4 / DCP4 / MTP3 | none (GPU-only KV, deliberately) | Live long-context profile; legacy manual DCP/Trellis settings recorded |
 | [**Current v20 R7 EXL3 3.0 bpw**](profiles/glm52-v20-r7-exl3-3bpw/) | GLM-5.2 EXL3 3.0 bpw · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 262,144 | 813,568 | 3,072 | 8 | TP4 / DCP4 / MTP3 | none (GPU-only KV, deliberately) | Validated GPU-only lane, largest KV pool |
 | [v20 + LMCache NF3 hybrid](profiles/glm52-v20-lmcache-fp8rope/) | GLM-5.2 NVFP4 + NF3 hybrid · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 400,384 | 433,152 | 3,072 | 8 | TP4 / DCP4 / MTP3 | LMCache 48 GiB RAM L1 + 96 GiB NVMe L2, chunk 512 | Daily reference deployment, longest context |
 
