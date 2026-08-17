@@ -2,7 +2,7 @@
 
 These are end-to-end observations from the four-node switchless reference
 cluster. The primary table is a controlled client-observed matrix from the
-usable GPTQ RC1 serving configuration. Peak windows and later SparkCache
+usable GPTQ RC1 serving configuration. Peak windows and later SparkCache (the persistent context cache)
 measurements are labeled separately so they are not confused with that
 baseline.
 
@@ -91,7 +91,7 @@ protocol isolates decode scaling; it is not a unique-context capacity test.
 These are useful evidence that the path scales, but they are short
 workload-dependent windows, not replacements for the controlled matrix.
 
-## SparkCache live v47
+## SparkCache v47
 
 The cache results below came from the later v47 overlay, not from the RC1
 matrix above. The checkpoint, TP/DCP geometry, KV format and allocation, model
@@ -107,7 +107,7 @@ At approximately 393K tokens, per-rank measurements were:
 | Foreground snapshot | 3.63-4.16 s |
 | Background commit | 11.23-15.55 s |
 
-The asynchronous store path removed the earlier approximately 18-second
+The asynchronous store path avoided an approximately 18-second
 freeze-the-world event. It did not yet satisfy the strict sidecar interference
 budget: one test observed TTFT increase by 1.30 seconds and
 post-first-token decode increase by 1.78 seconds.
@@ -128,7 +128,7 @@ reported a 500,224-token logical KV pool. The public request ceiling remained
 ## Claim boundaries
 
 - No 10 GbE diagonal-link gain is included in these results.
-- Transport-only microbenchmarks from SparkRing are not serving throughput.
+- Transport-only microbenchmarks from the SparkRing transport layer are not serving throughput.
 - The serving matrix predates the v47 SparkCache overlay; it is a same-core
   RC1 serving baseline, not a cache-enabled throughput claim.
 - The public v48-next SparkCache source was not deployed for these measurements.

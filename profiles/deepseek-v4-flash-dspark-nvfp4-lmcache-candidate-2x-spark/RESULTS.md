@@ -2,7 +2,7 @@
 
 **Date:** (fill in after deployment)
 **Candidate port:** 18007
-**Production port:** 18006 (untouched)
+**Stage C port:** 18006 (untouched)
 
 ## Deployment Checklist
 
@@ -29,7 +29,7 @@
 | 8K | 4.29s | 1,911 | TBD | TBD |
 | 32K | 16.83s | 1,922 | TBD | TBD |
 
-## Repeat TTFT (LMCache hit)
+## Repeat TTFT (CPU offload connector hit)
 
 | Context | Stage C repeat TTFT | Candidate cold TTFT | Candidate repeat TTFT | Speedup |
 |---------|:-------------------:|:-------------------:|:----------------------:|:-------:|
@@ -62,7 +62,7 @@
 | 16K | 56.2 | 99.4 | TBD | TBD |
 | 32K | 40.2 | 96.0 | TBD | TBD |
 
-## MTP Acceptance
+## MTP Speculative-Draft Acceptance
 
 | Position | Stage C | Candidate |
 |----------|:-------:|:---------:|

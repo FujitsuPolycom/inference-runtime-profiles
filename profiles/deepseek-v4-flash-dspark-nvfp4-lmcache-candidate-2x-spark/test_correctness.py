@@ -5,7 +5,7 @@ Tests the 8 correctness gates from the integration plan:
 1. 8K exact cold vs exact repeat
 2. 32K exact cold vs exact repeat
 3. 32K saved prefix + unique 2K suffix
-4. Changed early token → LMCache miss
+4. Changed early token → cache miss
 5. (layout fingerprint — manual, not automated)
 6. C2 same-prefix: both responses match
 7. C2 unrelated-prefix: neither restores the other's state
@@ -255,8 +255,8 @@ def run_stage_a(url):
     return results
 
 def run_stage_c(url):
-    """Stage C: LMCache correctness gates."""
-    print("\n=== Stage C: LMCache correctness gates ===")
+    """Stage C: CPU offload connector correctness gates."""
+    print("\n=== Stage C: CPU offload connector correctness gates ===")
     results = []
     results.append(test_health(url))
     results.append(test_8k_cold_vs_repeat(url))

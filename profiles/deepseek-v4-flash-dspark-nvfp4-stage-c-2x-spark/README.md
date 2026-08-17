@@ -12,7 +12,7 @@ RDMA fabric.
 | Quantization | NVFP4 |
 | Served name | DeepSeek-V4-Flash-NVFP4-StageC |
 | Tensor parallel | 2 (split across two Spark nodes) |
-| MTP | 3 |
+| MTP (speculative tokens per draft) | 3 |
 | Max context | 1,048,576 |
 | KV cache dtype | nvfp4_ds_mla |
 | Block size | 256 |
@@ -26,11 +26,11 @@ RDMA fabric.
 | GPU topology | Two-node tensor parallel over RDMA fabric |
 | CUDA | CUDA 12.1a-class runtime |
 | Storage | NVMe-backed model/cache filesystem |
-| Parallelism | TP2 / DCP1 / MTP3 |
+| Parallelism | TP2 / DCP1 (decode context parallelism) / MTP3 |
 
 ## Key Features
 
-- TP2 / PP1 / DSpark MTP3 with probabilistic draft sampling
+- TP2 / PP1 / DSpark speculative decoding (MTP3) with probabilistic draft sampling
 - `nvfp4_ds_mla` KV cache with a fixed 10 GiB allocation per rank
 - 1,048,576-token request ceiling and an engine-reported 1,515,055-token
   usable shared KV pool

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "profile": "glm52-sparkring-sparkcache-4x-spark",
-  "status": "measured-live-v47-reference-with-public-v48-next-source",
+  "status": "measured-v47-reference-with-public-v48-next-source",
   "captured_at_utc": "2026-07-29T00:00:00Z",
   "hardware": {
     "nodes": 4,
@@ -116,7 +116,7 @@
     "native_arena_bytes": 268435456,
     "native_io_workers": 8,
     "public_next_generation": "v48-next",
-    "public_next_status": "published source, not yet live-deployed in this measured profile"
+    "public_next_status": "published source, not deployed in this measured profile"
   },
   "privacy": {
     "node_addresses": "redacted",

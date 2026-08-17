@@ -1,6 +1,6 @@
 # GLM-5.2 v20 R7 EXL3 3.0 bpw
 
-Validated four-GPU profile for the EXL3 3.0 bpw GLM-5.2 checkpoint. It uses
+Validated four-GPU profile for the GLM-5.2 checkpoint quantized with EXL3 at 3.0 bits per weight. It uses
 GPU-only KV caching: LMCache and NVMe KV offload are intentionally disabled.
 
 ## Checkpoint and runtime
@@ -12,7 +12,7 @@ GPU-only KV caching: LMCache and NVMe KV offload are intentionally disabled.
 | Runtime | Gilded Gnosis v20 R7 |
 | Image | `voipmonitor/vllm@sha256:fdc107c917f5ce7c7f78a51a2b76b171a0eb25569be58c1284809e7e6ba33482` |
 | Load format | InstantTensor |
-| Parallelism | TP4 / DCP4 / MTP3 |
+| Parallelism | TP4 (tensor parallel) / DCP4 (decode context parallel) / MTP3 (multi-token-prediction speculative decoding, 3 draft tokens) |
 
 ## Validated configuration
 
@@ -37,7 +37,7 @@ VLLM_B12X_MLA_CKV_GATHER_MAX_TOKENS=262144
 KV_FP8_ROPE=1
 ```
 
-The earlier 16,384-token ceiling caused prefills above 16K to leave the
+A 16,384-token ceiling would cause prefills above 16K to leave the
 optimized full-CKV gather path. The compact FP8-RoPE layout reduces each KV
 record from 432 to 368 bytes and the persistent gather workspace from 486.5
 to 414.4 MiB per GPU. This keeps the optimized path eligible throughout the

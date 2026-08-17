@@ -1,6 +1,6 @@
 # Results
 
-Latest sanitized runs on the reference 4x RTX PRO 6000 host. The service used
+Sanitized runs from 2026-07-24 on the 4x RTX PRO 6000 host described in [`README.md`](README.md). The service used
 TP4/DCP4/MTP3, FP8 RoPE, grouped LMCache (48 GB RAM L1 + 96 GB NVMe L2),
 `MAX_BATCHED_TOKENS=3072`, graph 32, and the NVIDIA PCIe P2P overrides.
 

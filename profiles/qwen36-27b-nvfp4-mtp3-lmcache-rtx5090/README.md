@@ -31,6 +31,6 @@ reuse across sessions.
 ## Apply
 
 1. Copy `profile.env.example` to `.env`
-2. Replace `REPLACE_WITH_*` placeholders
+2. Adjust local deployment values (paths, ports) for your host
 3. `docker compose up -d`
 4. Wait for model load (~135 seconds)

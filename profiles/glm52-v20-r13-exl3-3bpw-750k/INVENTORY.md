@@ -17,7 +17,7 @@
 | P2P / ReBAR | NVIDIA P2P registry override and ReBAR enabled; see root `HARDWARE.md` | Required host policy |
 | Power / OC | LACT boot service active; 400 W cap and P0 VRAM offset `+1000` per GPU; no core offset | Persistent |
 
-The LACT profile name is `vram-oc-plus-500` for historical reasons; its actual configured memory offset is `1000`.
+The LACT profile name `vram-oc-plus-500` does not reflect its configured memory offset, which is `1000`.
 
 ## 2. Model artifact
 
@@ -47,7 +47,7 @@ The LACT profile name is `vram-oc-plus-500` for historical reasons; its actual c
 
 | Area | Effective configuration |
 |---|---|
-| Parallelism | TP4 / DCP4; DCP backend A2A; interleave 64 |
+| Parallelism | TP4 / DCP4 (tensor-parallel 4, decode-context-parallel 4); DCP backend A2A; interleave 64 |
 | Quant / backend | EXL3; `nvfp4_ds_mla` KV; B12X sparse MLA attention and B12X MoE; InstantTensor loader |
 | Capacity | GMU 0.96; model ceiling 750,000; 8 sequences; 3,072 batched tokens |
 | CUDA graphs | `FULL_AND_PIECEWISE`; capture sizes 4, 8, 12, 16, 20, 24, 28, 32; max 32 |
@@ -65,7 +65,7 @@ Startup confirms `KV_FP8_ROPE=1`, `kv_gmem_stride=368`, and `nvfp4_ds_mla` KV.
 | CKV gather | enabled; minimum 512 / maximum 262,144 tokens |
 | DCP policy | B12X A2A enabled; small A2A limit 16; large path `ag_rs`; query split forced off; draft sharding on |
 | Sparse/indexer | B12X sparse indexer, global top-k, MHC max 16,384, SM120 unified MLA |
-| PCIe collectives | B12X PCIe AR; one-shot AR 64 KiB; fused add/RMS 84 KiB; legacy RTX6K fused add disabled |
+| PCIe collectives | B12X PCIe AR; one-shot AR 64 KiB; fused add/RMS 84 KiB; RTX6K fused add disabled |
 | PCIe wire representation | `VLLM_PCIE_DMA_FP8=ag`, `B12X_PCIE_DMA_FP8=ag` |
 | EXL3 | Trellis min/max/block M = 4/32/8; W4A16 tensor-core decode; force A16 MoE |
 | Compiler | AOT on; V2 model runner; FlashInfer sampler; grouped MoE top-k; breakable CUDA graph off |

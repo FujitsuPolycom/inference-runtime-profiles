@@ -72,6 +72,6 @@ ssh -tt ai01 'cd /opt/llm-inference-bench && mkdir -p /srv/ai/bench-results && t
 - Use unique prompts when measuring cold prefill.
 - Treat first-use JIT cells as warmup and rerun affected cells.
 - Compare runs with identical model, topology, MTP, cache format, and graph settings.
-- Record whether the required NVIDIA P2P driver settings were active.
+- Record whether the NVIDIA P2P driver settings described in [HARDWARE.md](HARDWARE.md) were active.
 - Press `q` for a graceful partial result or `Ctrl+C` to stop immediately.
 - Publish summarized results, not raw prompts or logs containing private data.

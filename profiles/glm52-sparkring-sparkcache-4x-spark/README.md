@@ -9,7 +9,7 @@ payloads.
 This profile combines two explicitly separated evidence sets:
 
 1. a complete 20-cell serving matrix from the usable GPTQ RC1 configuration;
-2. SparkCache measurements from the later live v47 deployment.
+2. measurements of SparkCache, the persistent context cache, from the later v47 deployment.
 
 The two deployments used the same checkpoint, TP4/DCP4 layout, KV geometry,
 batch limits, CUDA-graph plan, and switchless fabric. The serving matrix
@@ -17,8 +17,8 @@ predates the v47 SparkCache overlay, so it is not mislabeled as a cache-enabled
 benchmark. See [RESULTS.md](RESULTS.md) for the exact boundary and the
 machine-readable evidence record.
 
-This profile also points to the newer public
-[SparkRing](https://github.com/FujitsuPolycom/sparkring) source, but does not
+This profile also points to the public
+[SparkRing](https://github.com/FujitsuPolycom/sparkring) source (the switchless transport and context-cache layer used by this profile), but does not
 claim that the public builder reproduces the complete measured runtime yet.
 
 ## Configuration
@@ -45,7 +45,7 @@ claim that the public builder reproduces the complete measured runtime yet.
   inference collectives.
 - Custom TP4 all-reduce, vocabulary, DCP query, and DCP combine paths.
 - A checksum-pinned NCCL 2.30.7 switchless-ring fallback for collectives that
-  have not moved to SIRCL.
+  are not carried by SIRCL.
 - CUDA-graph-aware capture buckets through query width 40.
 - SparkCache persistent context snapshots and restore for the DCP4-sharded KV
   layout.
@@ -60,13 +60,13 @@ throughput.
 There are two source lanes:
 
 1. **Measured reference lane (v47):** the exact locally built image and
-   attested launch overlay used by the live cluster. Its identities are
+   attested launch overlay used by the reference cluster. Its identities are
    recorded in `manifest.json`, but the complete private vLLM overlay and
    orchestration layer are not published.
 2. **Public next lane:** SparkRing commit
    `7840ce58794126c73f1076538938749aedb189b1`, which publishes SIRCL,
    SparkCache, the pinned runtime builder, and fail-closed public patches. Its
-   larger reference vLLM overlay still needs provenance cleanup or independent
+   larger reference vLLM overlay needs provenance cleanup or independent
    replacement before it can reproduce every serving feature.
 
 Consequently, `compose.yml` is an exact configuration envelope, not a promise
@@ -120,7 +120,7 @@ communicator.
 
 ## SparkCache
 
-The live v47 profile enables native SparkCache restore with a 256 MiB native
+The v47 profile enables native SparkCache restore with a 256 MiB native
 arena and eight I/O workers. At approximately 393K tokens, foreground snapshot
 work measured 3.63-4.16 seconds per rank and background commit completed in
 11.23-15.55 seconds. The asynchronous store path avoided an 18-second
@@ -128,7 +128,7 @@ freeze-the-world event, though strict interference budgets were not yet met.
 
 The public next lane adds stronger immutable checkpoint identity and source
 contracts. Migrate those changes as a separately attested release; do not mix
-v48-next hashes into a live v47 manifest.
+v48-next hashes into a v47 manifest.
 
 ## Safety and privacy
 

@@ -1,7 +1,8 @@
 # GLM-5.2 v20 + Grouped LMCache, FP8 RoPE
 
-Current daily profile for the reference four-GPU PCIe workstation. This is
-the latest stock v20 runtime with grouped LMCache added; the experimental
+Daily-driver profile for the four-GPU PCIe workstation described under
+Reference hardware below (deployment captured 2026-07-24; see
+[`manifest.json`](manifest.json)). Stock v20 runtime with grouped LMCache added; the experimental
 replicated-indexer and sparse-decode overlays are disabled.
 
 ## Checkpoint
@@ -23,7 +24,9 @@ replicated-indexer and sparse-decode overlays are disabled.
 - ASUS Pro WS WRX90E-SAGE SE
 - 128 GiB system RAM 8x16GB DDR5-6400
 - PCIe Gen5 x16-class GPU links, direct motherboard/riser topology
-- TP4 / DCP4 / MTP3
+- TP4 / DCP4 / MTP3 (tensor-parallel degree 4; DCP degree 4, the parallelism
+  dimension that shards the KV cache across ranks; MTP speculative decoding
+  with 3 draft tokens)
 
 ## IMPORTANT: P2P Settings - Without this expect -30% decode loses at C1+
 The NVIDIA P2P and Resizable BAR settings are required for the reference
@@ -47,7 +50,7 @@ options nvidia NVreg_RegistryDwords="ForceP2P=0x11;RMForceP2PType=1;RMPcieP2PTyp
 | Setting | Value |
 |---|---|
 | Base image lineage | `voipmonitor/vllm:gilded-gnosis-v20-vllm7e3bee1-si6234185-fi801d57a-cu132-20260723` |
-| Current local image | `ai01/glm52-v20-lmcache:grouped-dcp-0.5.2-hma` |
+| Local overlay image | `ai01/glm52-v20-lmcache:grouped-dcp-0.5.2-hma` |
 | Maximum model length | `400384` tokens |
 | Maximum available GPU KV | `433152` tokens |
 | Maximum sequences | `8` |
@@ -100,7 +103,7 @@ LMCACHE_SAVE_DECODE_CACHE=False
 
 ## Source lineage
 
-The exact source metadata for the live deployment is in [`manifest.json`](manifest.json).
+The exact source metadata for this profile's deployment is in [`manifest.json`](manifest.json).
 The important revisions are:
 
 - vLLM: `7e3bee1ed4bc87efbdc36060647a3475cfaa1f1e`
@@ -110,7 +113,7 @@ The important revisions are:
 - PyTorch: `2.12.0+cu132`
 - NCCL: `2.30.4`
 
-The current image is a local LMCache overlay. A public v20 image alone does
+The `ai01/glm52-v20-lmcache` image is a local LMCache overlay. A public v20 image alone does
 not reproduce the grouped LMCache integration.
 
 ## Apply
@@ -144,12 +147,12 @@ Application startup complete
 ```
 
 Run the repository P2P check before benchmarking. Then use the standardized
-commands in [`../../BENCHMARKING.md`](../../BENCHMARKING.md). Results for the
-current profile are in [`RESULTS.md`](RESULTS.md).
+commands in [`../../BENCHMARKING.md`](../../BENCHMARKING.md). Results for this
+profile are in [`RESULTS.md`](RESULTS.md).
 
 ## Measured snapshot
 
-The latest 10-run coding peak reached 134.3 tok/s median, 135.5 tok/s mean,
+The 10-run coding peak from the 2026-07-24 run recorded in [`RESULTS.md`](RESULTS.md) reached 134.3 tok/s median, 135.5 tok/s mean,
 and 143.2 tok/s maximum. Cold/integrated prefill measured approximately
 3,318 tok/s at 8K, 3,051 at 16K, 3,081 at 32K, 3,024 at 64K, 2,902 at 128K,
 2,794 at 200K, and 2,593 at 356K.

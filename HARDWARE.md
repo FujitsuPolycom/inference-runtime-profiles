@@ -38,7 +38,7 @@ options nvidia NVreg_RegistryDwords="ForceP2P=0x11;RMForceP2PType=1;RMPcieP2PTyp
 Changing NVIDIA module parameters requires `update-initramfs -u` and a reboot.
 After reboot, confirm the active values in `/proc/driver/nvidia/params`.
 
-The clean v20 A/B changed only this host state. C1 decode increased from 60.8
+A controlled A/B on the v20 profile, changing only this host state, measured the following. C1 decode increased from 60.8
 to 103.4 tok/s at 8K and from 59.2 to 95.8 tok/s at 64K. Prefill at 64K
 remained effectively unchanged (3,007 versus 3,019 tok/s). This makes driver
 state part of every reproducible performance record, not an optional tuning
@@ -72,7 +72,7 @@ whether the run is cold or warm. Compare only rows with identical profiles.
 | BF16-RoPE DCP1 reference | n/a | 81.2 at 8K | n/a | 90,240 tokens |
 | Qwen3.6-27B NVFP4 MTP3, RTX 5090 TP1 | ~135 tok/s prefill | ~99 tok/s decode | n/a | 204,039 tokens |
 
-The BF16 rows are an earlier controlled comparison and are included to show the
+The BF16 rows are a separate controlled comparison and are included to show the
 DCP penalty/recovery shape; they are not a baseline for the FP8-RoPE profile.
 
 ## Four-node DGX Spark reference cluster
@@ -118,7 +118,7 @@ for exact runtime settings, source-status caveats, and cache measurements.
 ## Interpretation
 
 - GPU KV capacity is a VRAM allocation, not LMCache capacity.
-- The daily profile uses a 48 GB host-RAM LMCache tier; its NVMe filesystem is
+- The GLM-5.2 v20 + Grouped LMCache profile (`profiles/glm52-v20-lmcache-fp8rope/`) uses a 48 GB host-RAM LMCache tier; its NVMe filesystem is
   available for general caches but is not automatically an LMCache KV tier.
 - Increasing DCP reduces KV duplication but adds communication.
 - MTP increases decode work per scheduling step and changes the useful comparison

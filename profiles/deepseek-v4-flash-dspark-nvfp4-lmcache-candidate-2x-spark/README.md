@@ -14,11 +14,11 @@ Parent profile: [deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark](../deepseek-v4
 | Quantization | NVFP4 |
 | Served name | DeepSeek-V4-Flash-NVFP4-LMCache-Candidate |
 | Tensor parallel | 2 (split across two Spark nodes) |
-| MTP | 3 |
+| MTP (speculative tokens per draft) | 3 |
 | Max context | 1,048,576 |
 | KV cache dtype | nvfp4_ds_mla |
 | Block size | 256 |
-| GPU memory utilization | 75% (reduced to accommodate connector overhead) |
+| GPU memory utilization | 75% (vs 80% in the Stage C parent profile, leaving headroom for connector overhead) |
 | KV connector | SimpleCPUOffloadConnector |
 | CPU offload RAM | 2 GiB per rank (4 GiB total) |
 
@@ -35,7 +35,7 @@ Parent profile: [deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark](../deepseek-v4
 | Compose project | ds4f-nvfp4 | ds4f-nvfp4-lmcache-candidate |
 | LiteLLM route | spark-dsv4f -> :18006 | NOT routed (test only) |
 
-Everything else is identical: same model, same image, same topology (TP2/DCP1),
+Everything else is identical: same model, same image, same topology (TP2/DCP1, DCP = decode context parallelism),
 same KV dtype (nvfp4_ds_mla), same block size (256), same MTP3, same b12x env.
 
 ## Hardware

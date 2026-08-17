@@ -1,6 +1,6 @@
 {
   "profile": "glm52-v20-lmcache-fp8rope",
-  "status": "current-live",
+  "status": "live-captured",
   "captured_at": "2026-07-24",
   "hardware": {
     "gpu": "4x NVIDIA RTX PRO 6000 Blackwell, 96 GiB each",

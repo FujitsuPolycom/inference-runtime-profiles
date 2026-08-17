@@ -21,8 +21,9 @@ guardrail, not a guarantee.
 
 The four-GPU RTX PRO 6000 Blackwell profiles depend on direct PCIe peer access.
 The published v20 launcher and `llm-inference-bench` both detect the recommended
-NVIDIA registry settings. On the reference host, the model started without them
-but decode performance fell from approximately **100 tok/s to 60 tok/s**.
+NVIDIA registry settings. Measured on the RTX workstation reference rig ([HARDWARE.md](HARDWARE.md)): the
+model started without them, but decode performance fell from approximately
+**100 tok/s to 60 tok/s**.
 
 Create `/etc/modprobe.d/nvidia-p2p-override.conf`:
 
@@ -50,7 +51,7 @@ These values are specific to the tested NVIDIA PCIe workstation topology. Keep
 console access available, verify peer connectivity after reboot, and do not
 blindly apply them to unrelated hardware or driver versions. See
 [HARDWARE.md](HARDWARE.md) and the
-[current v20 LMCache daily profile](profiles/glm52-v20-lmcache-fp8rope/) for
+[v20 + LMCache NF3 hybrid profile](profiles/glm52-v20-lmcache-fp8rope/) for
 the reference configuration and measured comparison.
 
 ## Benchmarking
@@ -59,7 +60,7 @@ See [BENCHMARKING.md](BENCHMARKING.md) for PowerShell-ready quick, practical,
 full-standard, and cold-prefill benchmark commands using
 `local-inference-lab/llm-inference-bench`.
 
-For the reference four-GPU PCIe host, run `tools/check-pcie-p2p.sh` as root
+For the four-GPU RTX workstation reference rig ([HARDWARE.md](HARDWARE.md)), run `tools/check-pcie-p2p.sh` as root
 before deployment. It checks the NVIDIA registry override, runtime driver
 parameters, GPU topology, and CUDA peer-access visibility.
 
@@ -78,26 +79,29 @@ profiles/<profile-name>/
 
 ### 4x RTX workstation profiles
 
-Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM 6400 (8x16GB)**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The maintained 4x GLM profile below is the current LMCache deployment and daily reference. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
+Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM 6400 (8x16GB)**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The v20 + LMCache NF3 hybrid profile below is the maintained LMCache deployment and daily reference. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
 
 #### GLM-5.2
 
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
 |---|---|---:|---:|---:|---:|---|---|---|
-| [**Live v20 R13 EXL3 3.0 bpw, 750k ceiling**](profiles/glm52-v20-r13-exl3-3bpw-750k/) | GLM-5.2 EXL3 3.0 bpw · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 750,000 | 831,911 | 3,072 | 8 | TP4 / DCP4 / MTP3 | none (GPU-only KV, deliberately) | Live long-context profile; legacy manual DCP/Trellis settings recorded |
-| [**Current v20 R7 EXL3 3.0 bpw**](profiles/glm52-v20-r7-exl3-3bpw/) | GLM-5.2 EXL3 3.0 bpw · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 262,144 | 813,568 | 3,072 | 8 | TP4 / DCP4 / MTP3 | none (GPU-only KV, deliberately) | Validated GPU-only lane, largest KV pool |
+| [**v20 R13 EXL3 3.0 bpw, 750k ceiling**](profiles/glm52-v20-r13-exl3-3bpw-750k/) | GLM-5.2 EXL3 3.0 bpw · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 750,000 | 831,911 | 3,072 | 8 | TP4 / DCP4 / MTP3 | none (GPU-only KV, deliberately) | Long-context profile; manual DCP/Trellis overrides recorded |
+| [**v20 R7 EXL3 3.0 bpw**](profiles/glm52-v20-r7-exl3-3bpw/) | GLM-5.2 EXL3 3.0 bpw · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 262,144 | 813,568 | 3,072 | 8 | TP4 / DCP4 / MTP3 | none (GPU-only KV, deliberately) | Validated GPU-only lane, largest KV pool |
 | [v20 + LMCache NF3 hybrid](profiles/glm52-v20-lmcache-fp8rope/) | GLM-5.2 NVFP4 + NF3 hybrid · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 400,384 | 433,152 | 3,072 | 8 | TP4 / DCP4 / MTP3 | LMCache 48 GiB RAM L1 + 96 GiB NVMe L2, chunk 512 | Daily reference deployment, longest context |
 
 ### 4x DGX Spark profiles
 
 These profiles target multi-node GB10 clusters rather than a single PCIe
-workstation. Fabric topology, management-plane isolation, and per-rank
-attestation are part of the configuration.
+workstation. SparkRing is the switchless direct-cable RoCE ring serving fabric
+these clusters use; SparkCache is its DCP-sharded NVMe context-snapshot cache.
+Fabric topology, management-plane isolation, and per-rank attestation are part
+of the configuration.
 
 #### GLM-5.2
 
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
 |---|---|---:|---:|---:|---:|---|---|---|
+| [GLM-5.2 EXL3 3.5 bpw fixed-MTP4, 4x Spark](profiles/glm52-exl3-r7-3.5bpw-mtp4-4x-spark/) | GLM-5.2 EXL3/Trellis 3.5 bpw + online K6 · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 262,144 | 1,156,864 | 4,096 | 8 | TP4 / DCP4 / MTP4 (fixed) | none accepted (native prefix caching; LMCache NVMe is an unaccepted candidate, 38.0x replay evidence) | sparkring operator default; SIRCL switchless transport |
 | [GLM-5.2 SparkRing + SparkCache, 4x Spark](profiles/glm52-sparkring-sparkcache-4x-spark/) | GLM-5.2 MXFP4-Experts GPTQ · `nvfp4_ds_mla` | 458,752 | 500,224 | 4,096 | 8 | TP4 / DCP4 / MTP4 | SparkCache (not LMCache): DCP4-sharded NVMe context snapshots, 256 MiB arena | Switchless direct-cable serving with persistent context snapshots |
 
 ### 2x DGX Spark profiles
@@ -106,6 +110,10 @@ These are separate from the 4x RTX workstation profiles and target two DGX
 Spark systems. They should not be treated as interchangeable launch recipes.
 
 #### DeepSeek V4 Flash
+
+DSpark is the speculative-decoding proposer these profiles run (MTP-style
+probabilistic draft sampling); `(dspark)` in the parallelism column marks its
+MTP implementation.
 
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
 |---|---|---:|---:|---:|---:|---|---|---|
