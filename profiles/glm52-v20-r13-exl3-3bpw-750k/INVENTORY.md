@@ -1,7 +1,7 @@
 # Component Inventory — GLM-5.2 EXL3 TP4/DCP4 Production Stack (ai01)
 
-**Serving endpoint:** `http://<host>:5810/v1`; served model `GLM-5.2-EXL3-TR3-3.0bpw`; OpenAI-compatible host-network service.  
-**Host:** single-node Debian 13 / kernel `7.0.14-4-pve`; captured live 2026-08-17.  
+**Serving endpoint:** `http://<host>:5810/v1`; served model `GLM-5.2-EXL3-TR3-3.0bpw`; OpenAI-compatible host-network service.
+**Host:** single-node Debian 13 / kernel `7.0.14-4-pve`; captured live 2026-08-17.
 **Container:** `glm52-v20-r7-exl3`; healthy since 2026-07-30, restart count `0`.
 
 ## 1. Hardware and host policy
@@ -89,4 +89,3 @@ Startup confirms `KV_FP8_ROPE=1`, `kv_gmem_stride=368`, and `nvfp4_ds_mla` KV.
 - The 750k request ceiling exceeds the 262,144-token CKV-gather ceiling, so longer prefills may use a different path.
 - FP8 RoPE is enabled without the later dynamic-NVFP4 scale variable pair. This is an accurate r13 capture, not a claim of the later complete dynamic-scale recipe.
 - This profile deliberately preserves legacy manual DCP/PCIe/Trellis overrides and therefore is not an r26+ auto-policy profile.
-
