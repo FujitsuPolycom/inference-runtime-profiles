@@ -115,7 +115,7 @@ Spark systems. They should not be treated as interchangeable launch recipes.
 
 | Profile | Main use | KV / offload |
 |---|---|---|
-| [Qwen3.8-27B EXL3 K5/K6 MTP2 + LMCache, 2x Spark](profiles/qwen38-27b-exl3-k5k6-mtp2-lmcache-2x-spark/) | Near-BF16 EXL3 lane (0.00276 KLD) with two-rail RoCE striping | FP8 KV, TP2, MTP2, 1,775,911-token pool, LMCache L1 + NVMe L2 |
+| [Qwen3.8-27B EXL3 K5/K6 MTP2 + LMCache, 2x Spark](profiles/qwen38-27b-exl3-k5k6-mtp2-lmcache-2x-spark/) | Near-BF16 EXL3 lane (0.00276 KLD) with two-rail RoCE striping | FP8 KV, TP2, MTP2, 1,775,911-token GPU pool; LMCache ~59K L1 + ~3.0M NVMe L2 tokens (65 KiB/token/rank) |
 
 ### 1x GPU profile
 
