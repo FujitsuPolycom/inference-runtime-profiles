@@ -4,8 +4,8 @@
 Gates:
   1. Greedy determinism            - same prompt twice, byte-identical output
   2. Warm prefix reuse (APC)       - repeat of a long prompt is materially faster,
-                                     byte-identical (the historical hybrid-model
-                                     silent-corruption scenario)
+                                     byte-identical (the known hybrid-model
+                                     silent-corruption failure mode — see README, Patches)
   3. Shared-prefix divergence      - two requests sharing a long prefix but
                                      diverging at the end each answer their own
                                      question (catches stale recurrent state)

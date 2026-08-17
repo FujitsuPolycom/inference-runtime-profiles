@@ -1,12 +1,12 @@
 # Results
 
-Sanitized runs on the reference DGX Spark pair, TP2 / MTP2 / FP8 KV / two-rail striping /
+Sanitized runs on the 2x DGX Spark pair described in README.md, TP2 / MTP2 / FP8 KV / two-rail striping /
 `BATCHTOK=3072`, EXL3 CUDA-graph decode, LMCache (8 GB L1 + NVMe L2, chunk 1600).
 Greedy (`temperature 0`) throughout. Harness: `local-inference-lab/llm-inference-bench`,
 plus direct endpoint timings where noted.
 
 **Note on `gpu_memory_utilization`:** the decode ladder, 256-token concurrency row, domain battery and prefill ladder below were measured at 0.40
-(KV pool 1,842,455 tokens). The profile now ships 0.70, which raises the pool to ~3.9M tokens
+(KV pool 1,842,455 tokens). The profile ships 0.70, which raises the pool to ~3.9M tokens
 and the 262K-context concurrency ceiling from 7.03x to 14.85x. Decode and prefill rates are
 unchanged by that bump — it buys KV residency, not speed. Cells needing more than 1.84M tokens
 of KV (for example 32 streams x 64K = 2.1M) are only reachable at the higher setting.
@@ -79,8 +79,7 @@ Outputs were byte-identical in every scenario. The trailing partial chunk (1,150
 1,600-token chunk) always recomputes — chunk granularity, by design.
 
 Earlier prefix-cache validation without LMCache: a 9K-token prompt replayed 1.9x faster with
-byte-identical greedy output (the historical silent-corruption scenario for hybrid models,
-which the #51113 port is what makes safe).
+byte-identical greedy output (the hybrid-model silent-corruption scenario that the vLLM #51113 mamba-align port — see README, Patches — makes safe).
 
 ## Transport
 

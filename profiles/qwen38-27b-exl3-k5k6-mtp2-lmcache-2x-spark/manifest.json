@@ -44,7 +44,7 @@
     "engine_repository": "https://github.com/local-inference-lab/vllm",
     "engine_base_commit_full": "fa033bd4e1b16d9d729ad94be2d87da5a13210ce",
     "engine_pr318_head_commit": "2b96dad45b2c9a1dd59b4bf3f9f33b06cb70f42a",
-    "engine_tested_mirror": "https://github.com/FujitsuPolycom/vllm tag qwen38-tested-20260817 (tip 229effc810ee) \u2014 the exact tested tree incl. both ports; independent of the upstream PR's fate",
+    "engine_tested_mirror": "https://github.com/FujitsuPolycom/vllm tag qwen38-tested-20260817 (tip 229effc810ee) \u2014 the exact tested tree incl. both ports; usable even if fork PR-318 is later force-pushed or deleted",
     "recipe_repository_commit": "58982dd751038fea1676b6fdfaf3a4d8dc1dabcc",
     "public_sparkring_commit": "4545c4ec4740f203d4f427db265414a34bd8f5db"
   },
@@ -143,7 +143,7 @@
       "32k": 918
     },
     "mtp_accept_len": "2.5-2.65",
-    "single_stream_note": "256-token generations, short context, GPUMEM 0.40 era; the decode_matrix rows (30.9 @4k cc1) are 512-token windows at GPUMEM 0.70 \u2014 different conditions, both real."
+    "single_stream_note": "256-token generations, short context, measured at GPUMEM 0.40; the decode_matrix rows (30.9 @4k cc1) are 512-token windows at GPUMEM 0.70 \u2014 different conditions, both real."
   },
   "privacy": {
     "addresses": "placeholders only",
@@ -153,7 +153,7 @@
   "operational_notes": {
     "restart_order": "kill engine -> cycle lmcache servers -> start engine. The MP servers hold the engine's KV cache through CUDA IPC and do not release it when the engine exits (69 GB observed held by a 4.8 GB-RSS process), so an engine-only restart can fail with 'Free memory on device cuda:0 ... less than desired GPU memory utilization'.",
     "launcher": "scripts/start-stack.sh in the recipe repository gates every precondition (ray GPUs free, cache servers listening, heartbeat patch present, weights and patched NCCL on both ranks) and verifies the engine answered before exiting 0.",
-    "power_recovery": "Prevention: sudo nvidia-ctk system create-dev-char-symlinks --create-all at boot (nvidia-container-toolkit#48). Recovery if it bites anyway: docker restart the serving container ('Failed to initialize NVML'), re-add rail /24s, ray head, ray worker, cycle cache servers, engine \u2014 encoded in the recipe's boot scripts.",
+    "power_recovery": "After an unclean power cycle, containers can come back without the NVIDIA /dev/char device nodes and fail with NVML initialization errors. Prevention: sudo nvidia-ctk system create-dev-char-symlinks --create-all at boot (nvidia-container-toolkit#48). Recovery if it bites anyway: docker restart the serving container ('Failed to initialize NVML'), re-add rail /24s, ray head, ray worker, cycle cache servers, engine \u2014 encoded in the recipe's boot scripts.",
     "single_node": "TP=1 runs the same stack on one Spark (drops ray, striping, rank-1 cache server). Measured: KV pool 1,669,678 tokens; decode 23.8/43.1/85.2 at 4k ctx and 22.2/42.0/85.3 at 16k for cc1/2/4; prefill 330/398/446/667 at 4k/8k/16k/32k. The LMCache chunk doubles to 213 MB since one node holds every KV head, so L1 must double for the same replay length; lower --max-num-seqs from 64 to suit the smaller pool."
   },
   "chat_template": {

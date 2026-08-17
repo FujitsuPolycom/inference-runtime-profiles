@@ -45,7 +45,7 @@ than the NVFP4 builds commonly run on this hardware, at 27 tok/s single-stream.
 | Engine | Gilded Gnosis vLLM fork (`local-inference-lab/vllm`), branch from `dev/gilded-gnosis @ fa033bd4e` + PR-318 stack + two upstream ports (below) |
 | Kernels | exllamav3 1.4.2 (@ `5f3c537` + aarch64 port), b12x 1.2.4 |
 | Framework | torch 2.12.0+cu132, CUDA 13.2.86 toolkit |
-| Transport | patched NCCL 2.30.7 (sparkring switchless-ring patches), `sha256 e69a8c24…` |
+| Transport | patched NCCL 2.30.7 (switchless-ring patches from the sparkring repository — URL in `manifest.json`, `public_sparkring_repository`), `sha256 e69a8c24…` |
 | KV tier | lmcache 0.5.2 + heartbeat patch (mandatory — see Patches) |
 | Base image | `nvcr.io/nvidia/cuda@sha256:5c36750138dc1447a17dafbb397674f167d3b44ce18d9160d769df114577b35d` |
 
