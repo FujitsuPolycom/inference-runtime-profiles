@@ -66,10 +66,13 @@
     "max_num_batched_tokens": 3072,
     "block_size": 1600,
     "kv_cache_dtype": "fp8",
-    "gpu_memory_utilization": 0.4,
-    "kv_pool_tokens": 1775911,
+    "gpu_memory_utilization": 0.7,
+    "kv_pool_tokens": 3893434,
     "prefix_caching": true,
-    "mamba_cache_mode": "align"
+    "mamba_cache_mode": "align",
+    "kv_pool_tokens_note": "Varies ~2% per boot with allocator state (3,893,434-3,973,864 observed at 0.70). 0.40 yielded 1,842,455; 0.55 yielded 2,852,305.",
+    "max_concurrency_at_max_model_len": 14.85,
+    "chat_template_default_reasoning_effort": "medium"
   },
   "kv_tier": {
     "connector": "LMCacheMPConnector",
@@ -111,5 +114,11 @@
     "addresses": "placeholders only",
     "hostnames": "placeholders only",
     "paths": "placeholders only"
+  },
+  "operational_notes": {
+    "restart_order": "kill engine -> cycle lmcache servers -> start engine. The MP servers hold the engine's KV cache through CUDA IPC and do not release it when the engine exits (69 GB observed held by a 4.8 GB-RSS process), so an engine-only restart can fail with 'Free memory on device cuda:0 ... less than desired GPU memory utilization'.",
+    "launcher": "scripts/start-stack.sh in the recipe repository gates every precondition (ray GPUs free, cache servers listening, heartbeat patch present, weights and patched NCCL on both ranks) and verifies the engine answered before exiting 0.",
+    "power_recovery": "After a power event the containers restart but rank 0 loses GPU access ('Failed to initialize NVML') and needs `docker restart`; then re-add rail /24s, ray head, ray worker, cache servers, engine.",
+    "single_node": "TP=1 runs the same stack on one Spark (drops ray, striping, rank-1 cache server)."
   }
 }

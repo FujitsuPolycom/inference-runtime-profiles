@@ -1,12 +1,2 @@
-.env
-.env.*
-!.env.example
-*.log
-*.trace
-*.pt.trace.json*
-cache/
-models/
-weights/
-secrets/
 __pycache__/
-
+*.pyc

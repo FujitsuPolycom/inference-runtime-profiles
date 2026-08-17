@@ -5,6 +5,12 @@ Sanitized runs on the reference DGX Spark pair, TP2 / MTP2 / FP8 KV / two-rail s
 Greedy (`temperature 0`) throughout. Harness: `local-inference-lab/llm-inference-bench`,
 plus direct endpoint timings where noted.
 
+**Note on `gpu_memory_utilization`:** the throughput figures below were measured at 0.40
+(KV pool 1,842,455 tokens). The profile now ships 0.70, which raises the pool to ~3.9M tokens
+and the 262K-context concurrency ceiling from 7.03x to 14.85x. Decode and prefill rates are
+unchanged by that bump — it buys KV residency, not speed. Cells needing more than 1.84M tokens
+of KV (for example 32 streams x 64K = 2.1M) are only reachable at the higher setting.
+
 ## Single-stream decode ladder
 
 Each row adds one change to the row above, so the ladder doubles as an ablation.
@@ -30,8 +36,8 @@ MTP2 versus MTP3 is a deliberate trade: MTP2 gives up ~6% single-stream and retu
 Concurrency has also been exercised well beyond these short streams: cc1–8 at 16K and 32K
 context, and 64 concurrent streams averaging ~16K context each under live agentic load (KV pool
 56.9% occupied at that point). Single-stream has been run to a 227,328-token prompt. The
-untested regime is many streams at 100K+ each, which the KV pool caps at roughly 14 streams at
-131K or 7 at the full 262K.
+untested regime is many streams at 100K+ each, which the 3.9M-token pool caps at roughly 29
+streams at 131K or 14 at the full 262K (7 at the 0.40 setting these rows were measured on).
 
 Under a mixed agentic load at 64 streams the engine sustained 1,030–1,325 tok/s of prefill
 concurrently with 91–128 tok/s of decode, at 72% native prefix-cache hit rate plus 17–18%

@@ -21,11 +21,11 @@ than the NVFP4 builds commonly run on this hardware, at 27 tok/s single-stream.
 | Tensor parallel | 2 (one GPU per node, ray executor) |
 | MTP | 2 (throughput mode; 3 = interactive alternative, +6% single-stream / −4% at 64 streams) |
 | Max context | 262,144 |
-| KV cache dtype | FP8 (KV pool ≈ 1.78M tokens) |
+| KV cache dtype | FP8 (KV pool ≈ 3.9M tokens) |
 | Block size | 1600 (mamba/GDN block) |
 | Max batched tokens | 3072 (LMCache mamba-align constraint — see Constraints) |
 | Max sequences | 64 |
-| GPU memory utilization | 40% |
+| GPU memory utilization | 70% (see Constraints — 40% and 55% also validated) |
 
 ## Hardware
 
@@ -108,6 +108,20 @@ resolves its own backend and crashes without its own pin.
 - **Concurrency is validated to 64 streams at short-to-mid context** (cc1–8 measured at 16K and
   32K; ~16K average context per stream at cc64 under live load) and **single-stream to 227K
   tokens**. What is untested is high concurrency at 100K+ contexts — where the KV pool, not
-  compute, is the binding constraint: 1.84M tokens divides to about 14 streams at 131K or 7 at
-  the full 262K (the engine reports this as "maximum concurrency 7.03x").
+  compute, is the binding constraint: the 3.9M-token pool divides to about 29 streams at 131K or
+  14 at the full 262K (the engine reports the latter as "maximum concurrency 14.85x").
+- **`gpu_memory_utilization` is a unified-memory budget, not a VRAM one.** On GB10 the same pool
+  serves the OS, page cache, ray, and the cache servers, so the usual 0.85–0.95 discrete-GPU
+  values do not apply; community guidance for this hardware is ≤0.70. Measured pools here:
+  0.40 → 1,842,455 tokens, 0.55 → 2,852,305, 0.70 → ~3.9M (varies ~2% per boot with allocator
+  state). At 0.70 the host runs with roughly 20% memory available and 8–9 GB of swap in use
+  versus 31 MB at 0.40 — usable, but it is spending the headroom it was given.
+- **Restart order matters: kill engine → cycle cache servers → start engine.** The LMCache MP
+  servers hold the engine's KV cache through CUDA IPC and do not release it when the engine
+  exits — 69 GB observed still held by a server process whose RSS was 4.8 GB, which then fails
+  the next start with `Free memory on device cuda:0 (36.92/121.69 GiB) … less than desired GPU
+  memory utilization`. Cycling the servers releases it immediately (40.9 → 115.6 GB available).
+- The chat template defaults `reasoning_effort` to **medium**, which injects no reasoning
+  instruction; `xhigh` and `low` inject one. Override per request via `chat_template_kwargs`
+  (a top-level `reasoning_effort` field is ignored).
 - Vision path functional but only trivially probed.
