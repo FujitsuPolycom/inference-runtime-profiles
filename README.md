@@ -82,10 +82,10 @@ Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB 
 
 #### GLM-5.2
 
-| Name | Link | KV type | Max available GPU KV | Max model length | Batch tokens |
-|---|---|---|---:|---:|---:|
-| **Current v20 R7 EXL3 3.0 bpw** | [Open profile](profiles/glm52-v20-r7-exl3-3bpw/) | `nvfp4_ds_mla`, FP8 RoPE, 368 B | 813,568 | 262,144 | 3,072 |
-| v20 + LMCache NF3 hybrid | [Open profile](profiles/glm52-v20-lmcache-fp8rope/) | `nvfp4_ds_mla`, FP8 RoPE, 368 B | 433,152 | 400,384 | 3,072 |
+| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
+|---|---|---:|---:|---:|---:|---|---|---|
+| [**Current v20 R7 EXL3 3.0 bpw**](profiles/glm52-v20-r7-exl3-3bpw/) | GLM-5.2 EXL3 3.0 bpw · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 262,144 | 813,568 | 3,072 | 8 | TP4 / DCP4 / MTP3 | none (GPU-only KV, deliberately) | Validated GPU-only lane, largest KV pool |
+| [v20 + LMCache NF3 hybrid](profiles/glm52-v20-lmcache-fp8rope/) | GLM-5.2 NVFP4 + NF3 hybrid · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 400,384 | 433,152 | 3,072 | 8 | TP4 / DCP4 / MTP3 | LMCache 48 GiB RAM L1 + 96 GiB NVMe L2, chunk 512 | Daily reference deployment, longest context |
 
 ### 4x DGX Spark profiles
 
@@ -95,9 +95,9 @@ attestation are part of the configuration.
 
 #### GLM-5.2
 
-| Profile | Main use | Parallelism / KV |
-|---|---|---|
-| [GLM-5.2 SparkRing + SparkCache, 4x Spark](profiles/glm52-sparkring-sparkcache-4x-spark/) | Switchless direct-cable GLM-5.2 serving with persistent context snapshots | TP4 / DCP4 / MTP4, `nvfp4_ds_mla`, 500,224-token measured pool |
+| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
+|---|---|---:|---:|---:|---:|---|---|---|
+| [GLM-5.2 SparkRing + SparkCache, 4x Spark](profiles/glm52-sparkring-sparkcache-4x-spark/) | GLM-5.2 MXFP4-Experts GPTQ · `nvfp4_ds_mla` | 458,752 | 500,224 | 4,096 | 8 | TP4 / DCP4 / MTP4 | SparkCache (not LMCache): DCP4-sharded NVMe context snapshots, 256 MiB arena | Switchless direct-cable serving with persistent context snapshots |
 
 ### 2x DGX Spark profiles
 
@@ -106,22 +106,22 @@ Spark systems. They should not be treated as interchangeable launch recipes.
 
 #### DeepSeek V4 Flash
 
-| Profile | Main use | KV / offload |
-|---|---|---|
-| [DeepSeek V4 Flash DSpark NVFP4 Stage C, 2x Spark](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | Two-node long-context DeepSeek profile | `nvfp4_ds_mla`, TP2, MTP3, 1M request ceiling |
-| [DeepSeek V4 Flash DSpark NVFP4 LMCache Candidate](profiles/deepseek-v4-flash-dspark-nvfp4-lmcache-candidate-2x-spark/) | Test build with SimpleCPUOffloadConnector (CPU RAM KV offload) | CPU RAM offload, TP2, MTP3 |
+| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
+|---|---|---:|---:|---:|---:|---|---|---|
+| [DeepSeek V4 Flash DSpark NVFP4 Stage C, 2x Spark](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | 1,515,055 | 8,192 | 8 | TP2 / MTP3 (dspark) | none | Two-node long-context DeepSeek profile |
+| [DeepSeek V4 Flash DSpark NVFP4 LMCache Candidate](profiles/deepseek-v4-flash-dspark-nvfp4-lmcache-candidate-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | not yet measured | 8,192 | 8 | TP2 / MTP3 (dspark) | SimpleCPUOffloadConnector (**not** LMCache): 2 GiB/rank CPU RAM, no NVMe | Test build with CPU RAM KV offload |
 
 #### Qwen3.8-27B
 
-| Profile | Main use | KV / offload |
-|---|---|---|
-| [Qwen3.8-27B EXL3 K5/K6 MTP2 + LMCache, 2x Spark](profiles/qwen38-27b-exl3-k5k6-mtp2-lmcache-2x-spark/) | Near-BF16 EXL3 lane (0.00276 KLD) with two-rail RoCE striping | FP8 KV, TP2, MTP2, 1,775,911-token GPU pool; LMCache ~59K L1 + ~3.0M NVMe L2 tokens (65 KiB/token/rank) |
+| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
+|---|---|---:|---:|---:|---:|---|---|---|
+| [Qwen3.8-27B EXL3 K5/K6 MTP2 + LMCache, 2x Spark](profiles/qwen38-27b-exl3-k5k6-mtp2-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 1,775,911 | 3,072 | 64 | TP2 / MTP2 | LMCache 4 GB L1 + 200 GB NVMe L2, chunk 1600 (≈59K / ≈3.0M tokens) | Near-BF16 EXL3 lane (0.00276 KLD), two-rail RoCE striping |
 
 ### 1x GPU profile
 
-| Profile | Main use | KV / offload |
-|---|---|---|
-| [Qwen3.6-27B NVFP4 MTP3 + LMCache, RTX 5090](profiles/qwen36-27b-nvfp4-mtp3-lmcache-rtx5090/) | Single-GPU Qwen hybrid/Mamba with LMCache | FP8 KV, 204K tokens, 256 GB RAM L1 + Optane L2 |
+| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
+|---|---|---:|---:|---:|---:|---|---|---|
+| [Qwen3.6-27B NVFP4 MTP3 + LMCache, RTX 5090](profiles/qwen36-27b-nvfp4-mtp3-lmcache-rtx5090/) | Qwen3.6-27B NVFP4 · `fp8`, block 1600 (mamba) | 131,072 | 204,039 | 3,199 | 1 | TP1 / MTP3 | LMCache 256 GB pinned-RAM L1 + 180 GB Optane L2, chunk 1600 | Single-GPU Qwen hybrid/Mamba with LMCache |
 
 ## Commands
 
