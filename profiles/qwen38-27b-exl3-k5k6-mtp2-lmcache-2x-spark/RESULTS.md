@@ -1,7 +1,7 @@
 # Results
 
 Sanitized runs on the reference DGX Spark pair, TP2 / MTP2 / FP8 KV / two-rail striping /
-`BATCHTOK=3072`, EXL3 CUDA-graph decode, LMCache (4 GB L1 + NVMe L2, chunk 1600).
+`BATCHTOK=3072`, EXL3 CUDA-graph decode, LMCache (8 GB L1 + NVMe L2, chunk 1600).
 Greedy (`temperature 0`) throughout. Harness: `local-inference-lab/llm-inference-bench`,
 plus direct endpoint timings where noted.
 
