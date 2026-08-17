@@ -105,4 +105,9 @@ resolves its own backend and crashes without its own pin.
 - No KLD measurement on this hardware — fidelity is inherited from the checkpoint's published
   RTX 5090 receipts. Verified here by byte-exact greedy reproduction across cache states, not by
   a fidelity suite.
-- Long-context (100K+) concurrency untested. Vision path functional but only trivially probed.
+- **Concurrency is validated to 64 streams at short-to-mid context** (cc1–8 measured at 16K and
+  32K; ~16K average context per stream at cc64 under live load) and **single-stream to 227K
+  tokens**. What is untested is high concurrency at 100K+ contexts — where the KV pool, not
+  compute, is the binding constraint: 1.84M tokens divides to about 14 streams at 131K or 7 at
+  the full 262K (the engine reports this as "maximum concurrency 7.03x").
+- Vision path functional but only trivially probed.

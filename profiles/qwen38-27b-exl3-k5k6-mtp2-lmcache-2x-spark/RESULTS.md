@@ -27,6 +27,12 @@ MTP2 versus MTP3 is a deliberate trade: MTP2 gives up ~6% single-stream and retu
 |---|---:|---:|---:|---:|---:|
 | Aggregate tok/s | 25.4 | 139 | 189 | 228 | **275** |
 
+Concurrency has also been exercised well beyond these short streams: cc1–8 at 16K and 32K
+context, and 64 concurrent streams averaging ~16K context each under live agentic load (KV pool
+56.9% occupied at that point). Single-stream has been run to a 227,328-token prompt. The
+untested regime is many streams at 100K+ each, which the KV pool caps at roughly 14 streams at
+131K or 7 at the full 262K.
+
 Under a mixed agentic load at 64 streams the engine sustained 1,030–1,325 tok/s of prefill
 concurrently with 91–128 tok/s of decode, at 72% native prefix-cache hit rate plus 17–18%
 external (LMCache) hit rate, KV pool peaking at 57%.
