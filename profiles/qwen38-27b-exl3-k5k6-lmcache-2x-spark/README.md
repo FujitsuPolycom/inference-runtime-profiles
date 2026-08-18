@@ -1,4 +1,4 @@
-# Qwen3.8-27B EXL3 K5/K6 + MTP2 + LMCache (2x DGX Spark, TP2)
+# Qwen3.8-27B EXL3 K5/K6 + LMCache (2x DGX Spark, TP2)
 
 Two-node profile for Qwen3.8-27B served from an EXL3 K5/K6 quant across a
 DGX Spark pair at TP2, with MTP speculative decoding, EXL3 CUDA-graph decode,

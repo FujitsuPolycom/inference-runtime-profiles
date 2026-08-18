@@ -128,7 +128,7 @@ MTP implementation.
 
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
 |---|---|---:|---:|---:|---:|---|---|---|
-| [Qwen3.8-27B EXL3 K5/K6 MTP2 + LMCache, 2x Spark](profiles/qwen38-27b-exl3-k5k6-mtp2-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 3,893,434 | 3,072 | 64 | TP2 / MTP2 | LMCache 4 GB L1 + 200 GB NVMe L2, chunk 1600 (≈59K / ≈3.0M tokens) | Near-BF16 EXL3 lane (0.00276 KLD), two-rail RoCE striping |
+| [Qwen3.8-27B EXL3 K5/K6 + LMCache, 2x Spark](profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 3,893,434 | 3,072 | 64 | TP2 / MTP3 | LMCache 4 GB L1 + 200 GB NVMe L2, chunk 1600 (≈59K / ≈3.0M tokens) | Near-BF16 EXL3 lane (0.00276 KLD), two-rail RoCE striping |
 
 ### 1x DGX Spark profile
 
@@ -140,7 +140,7 @@ cc1/2/4; prefill 330-667 tok/s from 4k to 32k.
 
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
 |---|---|---:|---:|---:|---:|---|---|---|
-| [Qwen3.8-27B EXL3 K5/K6 MTP2 + LMCache, 1x Spark](profiles/qwen38-27b-exl3-k5k6-mtp2-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 1,669,678 | 3,072 | 64 (lowering recommended for the smaller pool) | TP1 / MTP2 | LMCache 8 GB L1 + 200 GB NVMe L2, chunk 1600 (213 MB/chunk at TP1) | Single-Spark deployment of the same near-BF16 EXL3 lane |
+| [Qwen3.8-27B EXL3 K5/K6 + LMCache, 1x Spark](profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 1,669,678 | 3,072 | 64 (lowering recommended for the smaller pool) | TP1 / MTP3 | LMCache 8 GB L1 + 200 GB NVMe L2, chunk 1600 (213 MB/chunk at TP1) | Single-Spark deployment of the same near-BF16 EXL3 lane |
 
 ### 1x GPU profile
 

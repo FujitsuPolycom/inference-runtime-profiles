@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "profile": "qwen38-27b-exl3-k5k6-mtp2-lmcache-2x-spark",
+  "profile": "qwen38-27b-exl3-k5k6-lmcache-2x-spark",
   "status": "measured-live",
   "captured_at_utc": "2026-08-17T00:00:00Z",
   "hardware": {
@@ -65,7 +65,7 @@
     "attention_backend": "TRITON_ATTN",
     "mm_encoder_attention_backend": "TORCH_SDPA",
     "speculative_method": "qwen3_5_mtp",
-    "num_speculative_tokens": 2,
+    "num_speculative_tokens": 3,
     "speculative_attention_backend": "TRITON_ATTN",
     "max_model_len": 262144,
     "max_num_seqs": 64,
@@ -120,8 +120,8 @@
     "aggregate_decode_tok_s_at_64_streams": 275,
     "cold_prefill_tok_s": 1375,
     "cold_prefill_tok_s_without_lmcache_batch_constraint": 1500,
-    "replay_speedup_after_engine_restart": "7.4x",
-    "replay_speedup_after_engine_and_server_restart": "7.2x (chunks served from NVMe)",
+    "replay_speedup_after_engine_restart": "7.4x on a 20K synthetic prompt",
+    "replay_speedup_after_engine_and_server_restart": "15.1x on a 30K-token source-code prompt (61.69 s cold to 4.09 s; external prefix cache hit rate 97.9%, local 0.0%)",
     "notes": "Greedy throughout; outputs byte-identical across cold, warm, engine-restart and server-restart states. See RESULTS.md.",
     "decode_matrix_tok_s": {
       "note": "greedy, GPUMEM 0.70, BATCHTOK 3072, LMCache on, 20s windows",
@@ -142,8 +142,25 @@
       "16k": 1004,
       "32k": 918
     },
-    "mtp_accept_len": "2.5-2.65",
-    "single_stream_note": "256-token generations, short context, measured at GPUMEM 0.40; the decode_matrix rows (30.9 @4k cc1) are 512-token windows at GPUMEM 0.70 \u2014 different conditions, both real."
+    "mtp_accept_len": "2.95 at depth 3; 2.5-2.65 at depth 2",
+    "single_stream_note": "256-token generations, short context, measured at GPUMEM 0.40; the decode_matrix rows (30.9 @4k cc1) are 512-token windows at GPUMEM 0.70 \u2014 different conditions, both real.",
+    "speculative_depth_comparison": {
+      "conditions": "TP2, context 4096, six decode samples per depth, greedy",
+      "depth_2": {
+        "cc1": 29.37,
+        "cc4": 107.61
+      },
+      "depth_3": {
+        "cc1": 32.01,
+        "cc4": 111.42
+      },
+      "prefill_4k_tok_s": {
+        "depth_2": 1359,
+        "depth_3": 1348
+      },
+      "single_stream_run_to_run_spread": "11.8%",
+      "conclusion": "Depth 3 is the deployed default: higher at one and four streams with prefill unchanged. Saturated many-stream serving is not covered by these measurements."
+    }
   },
   "privacy": {
     "addresses": "placeholders only",
