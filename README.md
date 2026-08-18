@@ -126,6 +126,18 @@ MTP implementation.
 |---|---|---:|---:|---:|---:|---|---|---|
 | [Qwen3.8-27B EXL3 K5/K6 MTP2 + LMCache, 2x Spark](profiles/qwen38-27b-exl3-k5k6-mtp2-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 3,893,434 | 3,072 | 64 | TP2 / MTP2 | LMCache 4 GB L1 + 200 GB NVMe L2, chunk 1600 (≈59K / ≈3.0M tokens) | Near-BF16 EXL3 lane (0.00276 KLD), two-rail RoCE striping |
 
+### 1x DGX Spark profile
+
+The Qwen3.8-27B profile below is the same bundle as its 2x entry, run with `TP=1` — one node
+carries all weights and every KV head, so the KV pool shrinks and the LMCache chunk doubles to
+213 MB (an 8 GB L1 stages ~59K replayable tokens at TP1 versus ~118K at TP2). No ray, no
+striping, no second cache server. Measured: decode 23.8 / 43.1 / 85.2 tok/s at 4k context for
+cc1/2/4; prefill 330-667 tok/s from 4k to 32k.
+
+| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
+|---|---|---:|---:|---:|---:|---|---|---|
+| [Qwen3.8-27B EXL3 K5/K6 MTP2 + LMCache, 1x Spark](profiles/qwen38-27b-exl3-k5k6-mtp2-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 1,669,678 | 3,072 | 64 (lowering recommended for the smaller pool) | TP1 / MTP2 | LMCache 8 GB L1 + 200 GB NVMe L2, chunk 1600 (213 MB/chunk at TP1) | Single-Spark deployment of the same near-BF16 EXL3 lane |
+
 ### 1x GPU profile
 
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
