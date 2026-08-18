@@ -1,4 +1,4 @@
-# DeepSeek V4 Flash DSpark NVFP4 + LMCache Candidate (2x Spark, 4x GPU)
+# DeepSeek V4 Flash DSpark NVFP4 + CPU Offload Candidate (2x Spark, 4x GPU)
 
 Isolated test profile that adds CPU RAM KV offloading to the DeepSeek V4 Flash DSpark Stage C
 configuration. Uses the upstream vLLM `SimpleCPUOffloadConnector` which supports multi-group KV
@@ -12,7 +12,7 @@ Parent profile: [deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark](../deepseek-v4
 |---|---|
 | Model ID | deepseek-ai/DeepSeek-V4-Flash-DSpark |
 | Quantization | NVFP4 |
-| Served name | DeepSeek-V4-Flash-NVFP4-LMCache-Candidate |
+| Served name | DeepSeek-V4-Flash-NVFP4-CPUOffload-Candidate |
 | Tensor parallel | 2 (split across two Spark nodes) |
 | MTP (speculative tokens per draft) | 3 |
 | Max context | 1,048,576 |
@@ -27,12 +27,12 @@ Parent profile: [deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark](../deepseek-v4
 | Parameter | Stage C (production) | Candidate |
 |---|---|---|
 | Port | 18006 | 18007 |
-| Served name | DeepSeek-V4-Flash-NVFP4-StageC | DeepSeek-V4-Flash-NVFP4-LMCache-Candidate |
+| Served name | DeepSeek-V4-Flash-NVFP4-StageC | DeepSeek-V4-Flash-NVFP4-CPUOffload-Candidate |
 | KV connector | none | SimpleCPUOffloadConnector |
 | CPU offload RAM | n/a | 2 GiB per rank (4 GiB total) |
 | GPU mem util | 80% | 75% |
 | PYTORCH_CUDA_ALLOC_CONF | expandable_segments:True | (unset — incompatible with connector) |
-| Compose project | ds4f-nvfp4 | ds4f-nvfp4-lmcache-candidate |
+| Compose project | ds4f-nvfp4 | ds4f-nvfp4-cpu-offload-candidate |
 | LiteLLM route | spark-dsv4f -> :18006 | NOT routed (test only) |
 
 Everything else is identical: same model, same image, same topology (TP2/DCP1, DCP = decode context parallelism),
@@ -68,7 +68,7 @@ curl -s http://localhost:18007/v1/models | python3 -m json.tool
 
 ```bash
 # Stop candidate on both nodes
-docker compose -p ds4f-nvfp4-lmcache-candidate down
+docker compose -p ds4f-nvfp4-cpu-offload-candidate down
 
 # Production Stage C on :18006 is untouched — no rollback needed
 ```

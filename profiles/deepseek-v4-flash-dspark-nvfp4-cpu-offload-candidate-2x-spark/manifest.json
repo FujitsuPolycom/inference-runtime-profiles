@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "profile": "deepseek-v4-flash-dspark-nvfp4-lmcache-candidate-2x-spark",
+  "profile": "deepseek-v4-flash-dspark-nvfp4-cpu-offload-candidate-2x-spark",
   "captured_at_utc": null,
   "base_profile": "deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark",
   "image": "vllm-dspark-runtime:dspark-nvfp4-stage-c",
@@ -12,7 +12,7 @@
   },
   "model": {
     "id": "deepseek-ai/DeepSeek-V4-Flash-DSpark",
-    "served_name": "DeepSeek-V4-Flash-NVFP4-LMCache-Candidate",
+    "served_name": "DeepSeek-V4-Flash-NVFP4-CPUOffload-Candidate",
     "tensor_parallel_size": 2,
     "pipeline_parallel_size": 1,
     "speculative_method": "dspark",

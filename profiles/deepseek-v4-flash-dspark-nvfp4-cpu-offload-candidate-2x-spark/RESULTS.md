@@ -1,4 +1,4 @@
-# Results — NVFP4 LMCache Candidate
+# Results — NVFP4 CPU Offload Candidate
 
 **Date:** (fill in after deployment)
 **Candidate port:** 18007
@@ -8,8 +8,8 @@
 
 - [ ] Copy candidate profile to both Spark nodes
 - [ ] Copy `profile.env.example` to `.env` on both nodes, fill in placeholders
-- [ ] Start peer (node-rank 1) first: `docker compose -p ds4f-nvfp4-lmcache-candidate up -d`
-- [ ] Start head (node-rank 0): `docker compose -p ds4f-nvfp4-lmcache-candidate up -d`
+- [ ] Start peer (node-rank 1) first: `docker compose -p ds4f-nvfp4-cpu-offload-candidate up -d`
+- [ ] Start head (node-rank 0): `docker compose -p ds4f-nvfp4-cpu-offload-candidate up -d`
 - [ ] Wait for model load (~130s)
 - [ ] Verify: `curl -s http://localhost:18007/v1/models`
 - [ ] Run tests: `python3 test_correctness.py --url http://SPARK_HEAD:18007/v1 --stage C`

@@ -118,7 +118,7 @@ MTP implementation.
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
 |---|---|---:|---:|---:|---:|---|---|---|
 | [DeepSeek V4 Flash DSpark NVFP4 Stage C, 2x Spark](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | 1,515,055 | 8,192 | 8 | TP2 / MTP3 (dspark) | none | Two-node long-context DeepSeek profile |
-| [DeepSeek V4 Flash DSpark NVFP4 LMCache Candidate](profiles/deepseek-v4-flash-dspark-nvfp4-lmcache-candidate-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | not yet measured | 8,192 | 8 | TP2 / MTP3 (dspark) | SimpleCPUOffloadConnector (**not** LMCache): 2 GiB/rank CPU RAM, no NVMe | Test build with CPU RAM KV offload |
+| [DeepSeek V4 Flash DSpark NVFP4 CPU Offload Candidate](profiles/deepseek-v4-flash-dspark-nvfp4-cpu-offload-candidate-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | not yet measured | 8,192 | 8 | TP2 / MTP3 (dspark) | SimpleCPUOffloadConnector: 2 GiB/rank CPU RAM, no NVMe | Test build with CPU RAM KV offload |
 
 #### Qwen3.8-27B
 

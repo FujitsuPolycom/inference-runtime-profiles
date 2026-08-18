@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Correctness gate tests for NVFP4 LMCache candidate deployment.
+"""Correctness gate tests for the NVFP4 CPU offload candidate deployment.
 
 Tests 8 correctness gates:
 1. 8K exact cold vs exact repeat
@@ -24,7 +24,7 @@ import sys
 import requests
 from dataclasses import dataclass
 
-MODEL_NAME = "DeepSeek-V4-Flash-NVFP4-LMCache-Candidate"
+MODEL_NAME = "DeepSeek-V4-Flash-NVFP4-CPUOffload-Candidate"
 
 @dataclass
 class TestResult:
@@ -295,7 +295,7 @@ def print_results(results):
     return all_passed
 
 def main():
-    parser = argparse.ArgumentParser(description="NVFP4 LMCache correctness tests")
+    parser = argparse.ArgumentParser(description="NVFP4 CPU offload correctness tests")
     parser.add_argument("--url", required=True, help="vLLM API URL (e.g. http://spark-edfd:18007/v1)")
     parser.add_argument("--stage", default="C", choices=["A", "B", "C", "D", "E", "all"],
                         help="Which test stage to run")
