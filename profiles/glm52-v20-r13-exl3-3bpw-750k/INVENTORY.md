@@ -87,5 +87,5 @@ Startup confirms `KV_FP8_ROPE=1`, `kv_gmem_stride=368`, and `nvfp4_ds_mla` KV.
 - `/v1/models` responds successfully and reports the 750,000-token request ceiling.
 - No controlled benchmark or quality receipt belongs to this profile yet; put summarized reproducible results in `RESULTS.md`.
 - The 750k request ceiling exceeds the 262,144-token CKV-gather ceiling, so longer prefills may use a different path.
-- FP8 RoPE is enabled without the later dynamic-NVFP4 scale variable pair. This is an accurate r13 capture, not a claim of the later complete dynamic-scale recipe.
-- This profile deliberately preserves legacy manual DCP/PCIe/Trellis overrides and therefore is not an r26+ auto-policy profile.
+- FP8 RoPE is enabled; dynamic-NVFP4 scale variables are not set.
+- This profile uses deliberate manual DCP/PCIe/Trellis overrides.

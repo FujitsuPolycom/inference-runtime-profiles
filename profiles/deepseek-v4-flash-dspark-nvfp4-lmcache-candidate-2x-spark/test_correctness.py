@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Correctness gate tests for NVFP4 LMCache candidate deployment.
 
-Tests the 8 correctness gates from the integration plan:
+Tests 8 correctness gates:
 1. 8K exact cold vs exact repeat
 2. 32K exact cold vs exact repeat
 3. 32K saved prefix + unique 2K suffix
@@ -246,7 +246,7 @@ def test_health(url):
         return TestResult(name="Health check", passed=False, details=str(e))
 
 def run_stage_a(url):
-    """Stage A: Luke+b12x NVFP4 baseline tests."""
+    """Stage A: b12x NVFP4 baseline tests."""
     print("\n=== Stage A: Baseline correctness ===")
     results = []
     results.append(test_health(url))

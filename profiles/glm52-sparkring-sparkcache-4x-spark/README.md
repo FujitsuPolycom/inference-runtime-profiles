@@ -8,7 +8,7 @@ payloads.
 
 This profile combines two explicitly separated evidence sets:
 
-1. a complete 20-cell serving matrix from the usable GPTQ RC1 configuration;
+1. a complete 20-cell serving matrix from the GPTQ RC1 configuration;
 2. measurements of SparkCache, the persistent context cache, from the later v47 deployment.
 
 The two deployments used the same checkpoint, TP4/DCP4 layout, KV geometry,

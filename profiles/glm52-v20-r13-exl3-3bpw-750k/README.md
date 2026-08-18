@@ -29,8 +29,8 @@ The reference host is one Threadripper PRO 9965WX NUMA node with four RTX PRO 60
 ## Important caveats
 
 - The request ceiling (750k) exceeds the explicit full-CKV gather ceiling (262,144). Requests above the latter may use a different prefill path.
-- `KV_FP8_ROPE=1` is enabled, but the dynamic NVFP4 MLA scale variables are not present. This records the actual r13 service; it is not a claim that this is the later documented complete dynamic-NVFP4 configuration.
-- The profile contains deliberate manual DCP/PCIe/Trellis overrides, including query split disabled and `*_DMA_FP8=ag`. It is not the later r26+ helper auto-policy.
+- `KV_FP8_ROPE=1` is enabled; dynamic NVFP4 MLA scale variables are not present.
+- The profile contains deliberate manual DCP/PCIe/Trellis overrides, including query split disabled and `*_DMA_FP8=ag`.
 - No benchmark or quality receipt is attached yet. Add a sanitized result summary to `RESULTS.md` when a controlled r13 run is performed.
 
 ## Apply

@@ -20,7 +20,7 @@ guardrail, not a guarantee.
 ### NVIDIA PCIe P2P driver configuration
 
 The four-GPU RTX PRO 6000 Blackwell profiles depend on direct PCIe peer access.
-The published v20 launcher and `llm-inference-bench` both detect the recommended
+The setup scripts and `llm-inference-bench` both detect the recommended
 NVIDIA registry settings. Measured on the RTX workstation reference rig ([HARDWARE.md](HARDWARE.md)): the
 model started without them, but decode performance fell from approximately
 **100 tok/s to 60 tok/s**.

@@ -42,7 +42,7 @@ RDMA fabric.
   fabric interfaces through the private `.env`
 - B12x MoE and WO-projection paths enabled with tuned W4A16 block overrides
 - Triton MLA sparse attention with 256 MiB sparse-indexer logits budget
-- DSpark proposer patched via read-only bind mount of `dspark_proposer.py`
+- `dspark_proposer.py` is overridden via a read-only bind mount; its delta versus the image's built-in copy is not documented in this repository
 - Reasoning parser `deepseek_v4` with explicit `reasoning_start_str`/`reasoning_end_str`
   markers and `thinking: false` default chat template
 

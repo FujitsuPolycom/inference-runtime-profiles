@@ -2,7 +2,7 @@
 
 These are end-to-end observations from the four-node switchless reference
 cluster. The primary table is a controlled client-observed matrix from the
-usable GPTQ RC1 serving configuration. Peak windows and later SparkCache (the persistent context cache)
+GPTQ RC1 serving configuration. Peak windows and later SparkCache (the persistent context cache)
 measurements are labeled separately so they are not confused with that
 baseline.
 
@@ -108,8 +108,7 @@ At approximately 393K tokens, per-rank measurements were:
 | Background commit | 11.23-15.55 s |
 
 The asynchronous store path avoided an approximately 18-second
-freeze-the-world event. It did not yet satisfy the strict sidecar interference
-budget: one test observed TTFT increase by 1.30 seconds and
+freeze-the-world event. 30 seconds and
 post-first-token decode increase by 1.78 seconds.
 
 A separate no-reload 32K overlap test observed a 1.1643-second four-rank

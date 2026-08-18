@@ -107,7 +107,7 @@ The exact source metadata for this profile's deployment is in [`manifest.json`](
 The important revisions are:
 
 - vLLM: `7e3bee1ed4bc87efbdc36060647a3475cfaa1f1e`
-- B12X/SparkInfer: `62341856cc5497d0c8ba33012dab6118925a6cfb`
+- B12X/SparkInfer (CuTe-DSL GPU kernel library supplying the MLA attention and decode kernels): `62341856cc5497d0c8ba33012dab6118925a6cfb`
 - FlashInfer: `801d57a08958c13d375ddbb6be3be4808f48a708`
 - CUDA: `13.2.1`
 - PyTorch: `2.12.0+cu132`
