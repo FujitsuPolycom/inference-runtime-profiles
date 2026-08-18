@@ -5,6 +5,10 @@ image digest, launch arguments, environment, mounts, source revisions, hardware
 summary, and benchmark references without copying model weights or private
 machine details.
 
+Prose in this repository follows the writing standard in [AGENTS.md](AGENTS.md):
+a profile is a present-state specification readable without the history that
+produced it, and a status label states what was measured.
+
 ## Privacy rules
 
 Never commit raw `docker inspect`, shell history, logs, `.env` files, SSH
