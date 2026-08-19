@@ -7,7 +7,8 @@
   "runtime": {
     "vllm": "0.21.1rc1.dev339+g1967a5627bc3",
     "cuda_arch": "12.1a",
-    "topology": "two-node tensor parallel over RDMA fabric"
+    "topology": "two-node tensor parallel over RDMA fabric",
+    "vllm_provenance": "The recorded version string 0.21.1rc1.dev339+g1967a5627bc3 does not identify a buildable tree: commit 1967a5627bc3 alone lacks the dspark and nvfp4_ds_mla support this profile uses. The image builds from branch dev/infernal-invocation of https://github.com/local-inference-lab/vllm via https://github.com/local-inference-lab/blackwell-llm-docker (build-deepseek-infernal-invocation-cu133-torch213.sh), which pins the branch state, base image and companion packages."
   },
   "model": {
     "id": "deepseek-ai/DeepSeek-V4-Flash-DSpark",
