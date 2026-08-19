@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
   "profile": "glm52-exl3-r7-3.5bpw-mtp4-4x-spark",
-  "status": "accepted-operator-default (sparkring maturity 'accepted'; zero_build_ready false — remaining gate: clean-checkout ARM64 image build passing the four-rank promotion checklist)",
+  "status": "qualified",
+  "qualification_gate": "Sparkring maturity 'accepted' — the appliance's operator default (original status label: accepted-operator-default). zero_build_ready false — remaining gate: clean-checkout ARM64 image build passing the four-rank promotion checklist against the recorded image ID.",
   "captured_at_utc": "2026-08-13T00:00:00Z",
   "source_of_truth": {
     "repository": "https://github.com/FujitsuPolycom/sparkring",

@@ -1,8 +1,11 @@
-# DeepSeek V4 Flash DSpark NVFP4 Stage C (2x Spark, 4x GPU)
+# DeepSeek V4 Flash DSpark NVFP4 Stage C (2x Spark, TP2)
 
-Sanitized representation of a production-oriented, memory-focused DeepSeek V4
-Flash DSpark profile for two Blackwell DGX Spark nodes connected over QSFP
-RDMA fabric.
+Sanitized representation of the GPU-only-KV, 1M-context DeepSeek V4 Flash
+DSpark configuration for two Blackwell DGX Spark nodes connected over QSFP
+RDMA fabric; registry slug `deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark`.
+"Stage C" in the slug and the served-model name is a retained registry label,
+not a lifecycle stage; below, this configuration is called the GPU-only-KV
+profile.
 
 ## Model
 
@@ -22,7 +25,7 @@ RDMA fabric.
 
 | Component | Configuration |
 |---|---|
-| GPUs | 2x NVIDIA GPUs per Spark node (2-node TP2) |
+| GPUs | 1x NVIDIA GB10 per Spark node; 2 nodes; one tensor-parallel rank per node (TP2) |
 | GPU topology | Two-node tensor parallel over RDMA fabric |
 | CUDA | CUDA 12.1a-class runtime |
 | Storage | NVMe-backed model/cache filesystem |
@@ -48,15 +51,20 @@ RDMA fabric.
 
 ## Apply
 
-Copy `profile.env.example` to a private `.env` on both nodes. Use the same
-values on each node except `NODE_RANK`; set it to `0` on the fabric head and
-`1` on the peer. Set `MASTER_ADDR`, RDMA interface names (`NCCL_IB_HCA`,
-`NCCL_SOCKET_IFNAME`, `GLOO_SOCKET_IFNAME`, `TP_SOCKET_IFNAME`), model cache
-location, `DSPARK_PROPOSER_PATH`, and image reference privately.
+1. Copy `profile.env.example` to a private `.env` on both Spark nodes
+2. Replace all `REPLACE_WITH_*` placeholders; keep the model cache location,
+   `DSPARK_PROPOSER_PATH`, and image reference private
+3. Use the same values on both nodes except `NODE_RANK` (0 on the fabric
+   head, 1 on the peer)
+4. Set `MASTER_ADDR` to the head node IP
+5. Set the RDMA interface names (`NCCL_IB_HCA`, `NCCL_SOCKET_IFNAME`,
+   `GLOO_SOCKET_IFNAME`, `TP_SOCKET_IFNAME`) to match the deployment's fabric
+6. `docker compose up -d` on both nodes
 
 The compose file uses `shm_size: 68719476736` (64 GiB) to accommodate the
 multi-node tensor-parallel collective buffers. Docker's default 64 MiB shared
 memory is insufficient and will cause NCCL timeouts.
+
 ## Key Environment Variables
 
 ### DSpark Speculative Decoding
@@ -104,12 +112,3 @@ memory is insufficient and will cause NCCL timeouts.
 | `NCCL_CUMEM_ENABLE` | 0 | Disable CUDA memory management |
 | `NCCL_IGNORE_CPU_AFFINITY` | 1 | Ignore CPU affinity for NCCL |
 | `NCCL_NVLS_ENABLE` | 0 | Disable NVLink SHARP |
-
-## Apply
-
-1. Copy `profile.env.example` to `.env` on both Spark nodes
-2. Replace all `REPLACE_WITH_*` placeholders
-3. Use the same values on both nodes except `NODE_RANK` (0 on head, 1 on peer)
-4. Set `MASTER_ADDR` to the head node IP
-5. Set `NCCL_IB_HCA` / `NCCL_SOCKET_IFNAME` / `GLOO_SOCKET_IFNAME` to match RDMA interface
-6. `docker compose up -d` on both nodes

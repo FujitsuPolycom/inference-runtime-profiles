@@ -140,6 +140,8 @@ services:
       - '{"truncation":false}'
       - --mm-encoder-attn-backend
       - TORCH_SDPA
+      # MTP depth comes from MTPK: 3 is the production default; 2 = throughput
+      # mode, see RESULTS.md.
       - --speculative-config
       - '{"method":"qwen3_5_mtp","num_speculative_tokens":${MTPK},"attention_backend":"TRITON_ATTN"}'
       - --compilation-config

@@ -1,8 +1,10 @@
-# Results — NVFP4 CPU Offload Candidate
+# Measurement plan (no results yet)
+
+Status: research-only — unmeasured.
 
 **Date:** (fill in after deployment)
 **Candidate port:** 18007
-**Stage C port:** 18006 (untouched)
+**GPU-only-KV profile port:** 18006 (untouched)
 
 ## Deployment Checklist
 
@@ -16,7 +18,7 @@
 
 ## Startup
 
-| Metric | Stage C (production) | Candidate |
+| Metric | GPU-only-KV baseline | Candidate |
 |--------|---------------------|-----------|
 | Cold start time | ~130s | TBD |
 | Engine-reported KV tokens | 1,515,055 | TBD |
@@ -24,28 +26,28 @@
 
 ## Cold Prefill
 
-| Context | Stage C TTFT | Stage C tok/s | Candidate TTFT | Candidate tok/s |
+| Context | GPU-only-KV TTFT | GPU-only-KV tok/s | Candidate TTFT | Candidate tok/s |
 |---------|:-----------:|:------------:|:--------------:|:--------------:|
 | 8K | 4.29s | 1,911 | TBD | TBD |
 | 32K | 16.83s | 1,922 | TBD | TBD |
 
 ## Repeat TTFT (CPU offload connector hit)
 
-| Context | Stage C repeat TTFT | Candidate cold TTFT | Candidate repeat TTFT | Speedup |
+| Context | GPU-only-KV repeat TTFT | Candidate cold TTFT | Candidate repeat TTFT | Speedup |
 |---------|:-------------------:|:-------------------:|:----------------------:|:-------:|
 | 8K | 0.37s (GPU prefix) | TBD | TBD | TBD |
 | 32K | TBD (GPU prefix) | TBD | TBD | TBD |
 
 ## External Cache Metrics
 
-| Metric | Stage C | Candidate |
+| Metric | GPU-only-KV baseline | Candidate |
 |--------|---------|-----------|
 | external_prefix_cache_queries_total | 0 | TBD |
 | external_prefix_cache_hits_total | 0 | TBD |
 
 ## Correctness Gates
 
-| Test | Stage C | Candidate |
+| Test | GPU-only-KV baseline | Candidate |
 |------|:-------:|:---------:|
 | 1. 8K cold vs repeat (text match) | PASS | TBD |
 | 2. 32K cold vs repeat (text match) | PASS | TBD |
@@ -57,14 +59,14 @@
 
 ## Decode Performance
 
-| Context | Stage C C1 | Stage C C4 | Candidate C1 | Candidate C4 |
+| Context | GPU-only-KV C1 | GPU-only-KV C4 | Candidate C1 | Candidate C4 |
 |---------|:----------:|:----------:|:------------:|:------------:|
 | 16K | 56.2 | 99.4 | TBD | TBD |
 | 32K | 40.2 | 96.0 | TBD | TBD |
 
 ## MTP Speculative-Draft Acceptance
 
-| Position | Stage C | Candidate |
+| Position | GPU-only-KV baseline | Candidate |
 |----------|:-------:|:---------:|
 | 0 | 100% | TBD |
 | 1 | 77% | TBD |

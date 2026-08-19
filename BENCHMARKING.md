@@ -10,13 +10,15 @@ terminal dashboard.
 
 | Setting | Value |
 |---|---|
-| SSH host | `ai01` |
+| SSH host | `<inference-host>` (placeholder — the repository's privacy rules forbid committed hostnames) |
 | API | `127.0.0.1:5810` |
 | Model | `GLM-5.2` |
 | Benchmark checkout | `/opt/llm-inference-bench` |
 | Results directory | `/srv/ai/bench-results` |
 
-Change these values when testing a different profile or host.
+Change these values when testing a different profile or host. Name each output
+file `<profile-slug>-<matrix>-$ts.json` so the result carries the profile slug
+under test.
 
 ## Default Methodology
 
@@ -38,7 +40,7 @@ important defaults explicitly so saved runs remain understandable.
 Two contexts and two concurrency levels, 15 seconds per cell:
 
 ```powershell
-ssh -tt ai01 'cd /opt/llm-inference-bench && mkdir -p /srv/ai/bench-results && ts=$(date +%Y%m%d-%H%M%S) && PYTHONUNBUFFERED=1 ./.venv/bin/python -u llm_decode_bench.py --host 127.0.0.1 --port 5810 --model GLM-5.2 --contexts 8k,64k --concurrency 1,2 --duration 15 --display-mode live --output /srv/ai/bench-results/v20-quick-$ts.json'
+ssh -tt <inference-host> 'cd /opt/llm-inference-bench && mkdir -p /srv/ai/bench-results && ts=$(date +%Y%m%d-%H%M%S) && PYTHONUNBUFFERED=1 ./.venv/bin/python -u llm_decode_bench.py --host 127.0.0.1 --port 5810 --model GLM-5.2 --contexts 8k,64k --concurrency 1,2 --duration 15 --display-mode live --output /srv/ai/bench-results/<profile-slug>-quick-$ts.json'
 ```
 
 ## Practical Matrix
@@ -46,7 +48,7 @@ ssh -tt ai01 'cd /opt/llm-inference-bench && mkdir -p /srv/ai/bench-results && t
 Useful for routine comparisons without running the full concurrency ladder:
 
 ```powershell
-ssh -tt ai01 'cd /opt/llm-inference-bench && mkdir -p /srv/ai/bench-results && ts=$(date +%Y%m%d-%H%M%S) && PYTHONUNBUFFERED=1 ./.venv/bin/python -u llm_decode_bench.py --host 127.0.0.1 --port 5810 --model GLM-5.2 --contexts 8k,32k,64k,128k --concurrency 1,2,4 --duration 20 --display-mode live --output /srv/ai/bench-results/v20-practical-$ts.json'
+ssh -tt <inference-host> 'cd /opt/llm-inference-bench && mkdir -p /srv/ai/bench-results && ts=$(date +%Y%m%d-%H%M%S) && PYTHONUNBUFFERED=1 ./.venv/bin/python -u llm_decode_bench.py --host 127.0.0.1 --port 5810 --model GLM-5.2 --contexts 8k,32k,64k,128k --concurrency 1,2,4 --duration 20 --display-mode live --output /srv/ai/bench-results/<profile-slug>-practical-$ts.json'
 ```
 
 ## Full Standard Matrix
@@ -54,7 +56,7 @@ ssh -tt ai01 'cd /opt/llm-inference-bench && mkdir -p /srv/ai/bench-results && t
 This is the canonical sustained-decode run:
 
 ```powershell
-ssh -tt ai01 'cd /opt/llm-inference-bench && mkdir -p /srv/ai/bench-results && ts=$(date +%Y%m%d-%H%M%S) && PYTHONUNBUFFERED=1 ./.venv/bin/python -u llm_decode_bench.py --host 127.0.0.1 --port 5810 --model GLM-5.2 --contexts 0,16k,32k,64k,128k --concurrency 1,2,4,8,16,32,64,128 --duration 30 --display-mode live --output /srv/ai/bench-results/v20-standard-$ts.json'
+ssh -tt <inference-host> 'cd /opt/llm-inference-bench && mkdir -p /srv/ai/bench-results && ts=$(date +%Y%m%d-%H%M%S) && PYTHONUNBUFFERED=1 ./.venv/bin/python -u llm_decode_bench.py --host 127.0.0.1 --port 5810 --model GLM-5.2 --contexts 0,16k,32k,64k,128k --concurrency 1,2,4,8,16,32,64,128 --duration 30 --display-mode live --output /srv/ai/bench-results/<profile-slug>-standard-$ts.json'
 ```
 
 Add `--run-burst --burst-requests-per-concurrency 5` when a burst-throughput
@@ -63,7 +65,7 @@ report is also required.
 ## Cold Prefill Only
 
 ```powershell
-ssh -tt ai01 'cd /opt/llm-inference-bench && mkdir -p /srv/ai/bench-results && ts=$(date +%Y%m%d-%H%M%S) && PYTHONUNBUFFERED=1 ./.venv/bin/python -u llm_decode_bench.py --host 127.0.0.1 --port 5810 --model GLM-5.2 --prefill-only --prefill-contexts 8k,32k,64k,128k --display-mode live --output /srv/ai/bench-results/v20-prefill-$ts.json'
+ssh -tt <inference-host> 'cd /opt/llm-inference-bench && mkdir -p /srv/ai/bench-results && ts=$(date +%Y%m%d-%H%M%S) && PYTHONUNBUFFERED=1 ./.venv/bin/python -u llm_decode_bench.py --host 127.0.0.1 --port 5810 --model GLM-5.2 --prefill-only --prefill-contexts 8k,32k,64k,128k --display-mode live --output /srv/ai/bench-results/<profile-slug>-prefill-$ts.json'
 ```
 
 ## Operating Rules

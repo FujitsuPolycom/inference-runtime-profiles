@@ -5,9 +5,15 @@ DGX Spark pair at TP2, with MTP speculative decoding, EXL3 CUDA-graph decode,
 FP8 prefill and FP8 KV cache, patched-NCCL two-rail RoCE striping, prefix
 caching, and an LMCache L1 + NVMe L2 tier.
 
+Status: `qualified` — measured live on the deployed pair (original status
+label: measured-live); conditions and measurements in
+[RESULTS.md](RESULTS.md).
+
 Distinguishing feature versus the other Spark profiles here: this is the
-EXL3 (near-BF16 fidelity) lane rather than an NVFP4 one — the checkpoint
-measures **0.00276 mean KLD vs BF16**, roughly an order of magnitude tighter
+EXL3 (near-BF16 fidelity) lane rather than an NVFP4 one — the checkpoint's
+published figure is **0.00276 mean KLD vs BF16** (as published by the
+checkpoint author, measured on an RTX 5090 under a different runtime; not
+reproduced on GB10), roughly an order of magnitude tighter
 than the NVFP4 builds commonly run on this hardware, at 27 tok/s single-stream.
 
 ## Model
@@ -19,7 +25,7 @@ than the NVFP4 builds commonly run on this hardware, at 27 tok/s single-stream.
 | Quantization | EXL3 — MLP gate/up K5, down K6; attention K6; lm_head K6; quantized MTP head; BF16 embeddings + vision. 21.61 GiB (23.2 GB) |
 | Served name | qwen38 |
 | Tensor parallel | 2 (one GPU per node, ray executor) |
-| MTP | 2 (throughput mode; 3 = interactive alternative, +6% single-stream / −4% at 64 streams) |
+| MTP | 3 (production default; 2 = throughput alternative: −6% single-stream, +8%/+12%/+4% at 16/32/64 streams — see RESULTS.md) |
 | Max context | 262,144 |
 | KV cache dtype | FP8 (KV pool ≈ 3.9M tokens) |
 | Block size | 1600 (mamba/GDN block) |
@@ -36,7 +42,7 @@ than the NVFP4 builds commonly run on this hardware, at 27 tok/s single-stream.
 | Fabric | 4x direct 200G QSFP DAC between the pair; RoCEv2. Two rails used (one port per ConnectX-7 card) |
 | Per-link | ~109 Gb/s (PCIe Gen5 x4 per card is the ceiling; both ports of one card share it) |
 | Storage | NVMe (ext4) for the LMCache L2 tier |
-| Parallelism | TP2 / MTP2 |
+| Parallelism | TP2 / MTP3 (MTP2 = throughput alternative) |
 
 ## Runtime
 

@@ -1,6 +1,7 @@
 {
   "profile": "glm52-v20-r7-exl3-3bpw",
-  "status": "verified-live",
+  "status": "implemented",
+  "status_note": "Verified live on the reference host on 2026-07-28 (original status label: verified-live).",
   "captured_at": "2026-07-28",
   "hardware": {
     "gpu": "4x NVIDIA RTX PRO 6000 Blackwell, 96 GiB each",

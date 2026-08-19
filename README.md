@@ -26,8 +26,9 @@ guardrail, not a guarantee.
 The four-GPU RTX PRO 6000 Blackwell profiles depend on direct PCIe peer access.
 The setup scripts and `llm-inference-bench` both detect the recommended
 NVIDIA registry settings. Measured on the RTX workstation reference rig ([HARDWARE.md](HARDWARE.md)): the
-model started without them, but decode performance fell from approximately
-**100 tok/s to 60 tok/s**.
+model started without them, but C1 decode fell from **103.4 to 60.8 tok/s at
+8K** and from **95.8 to 59.2 tok/s at 64K** (the controlled A/B is recorded in
+[HARDWARE.md](HARDWARE.md)).
 
 Create `/etc/modprobe.d/nvidia-p2p-override.conf`:
 
@@ -55,7 +56,8 @@ These values are specific to the tested NVIDIA PCIe workstation topology. Keep
 console access available, verify peer connectivity after reboot, and do not
 blindly apply them to unrelated hardware or driver versions. See
 [HARDWARE.md](HARDWARE.md) and the
-[v20 + LMCache NF3 hybrid profile](profiles/glm52-v20-lmcache-fp8rope/) for
+[GLM-5.2 v20 + Grouped LMCache, FP8 RoPE profile](profiles/glm52-v20-lmcache-fp8rope/)
+(`glm52-v20-lmcache-fp8rope`) for
 the reference configuration and measured comparison.
 
 ## Benchmarking
@@ -83,7 +85,7 @@ profiles/<profile-name>/
 
 ### 4x RTX workstation profiles
 
-Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM 6400 (8x16GB)**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The v20 + LMCache NF3 hybrid profile below is the maintained LMCache deployment and daily reference. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
+Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM 6400 (8x16GB)**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The GLM-5.2 v20 + Grouped LMCache, FP8 RoPE profile below (`glm52-v20-lmcache-fp8rope`) is the maintained four-GPU workstation LMCache deployment. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
 
 #### GLM-5.2
 
@@ -91,7 +93,7 @@ Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB 
 |---|---|---:|---:|---:|---:|---|---|---|
 | [**v20 R13 EXL3 3.0 bpw, 750k ceiling**](profiles/glm52-v20-r13-exl3-3bpw-750k/) | GLM-5.2 EXL3 3.0 bpw · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 750,000 | 831,911 | 3,072 | 8 | TP4 / DCP4 / MTP3 | none (GPU-only KV, deliberately) | Long-context profile; manual DCP/Trellis overrides recorded |
 | [**v20 R7 EXL3 3.0 bpw**](profiles/glm52-v20-r7-exl3-3bpw/) | GLM-5.2 EXL3 3.0 bpw · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 262,144 | 813,568 | 3,072 | 8 | TP4 / DCP4 / MTP3 | none (GPU-only KV, deliberately) | Validated GPU-only lane, largest KV pool |
-| [v20 + LMCache NF3 hybrid](profiles/glm52-v20-lmcache-fp8rope/) | GLM-5.2 NVFP4 + NF3 hybrid · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 400,384 | 433,152 | 3,072 | 8 | TP4 / DCP4 / MTP3 | LMCache 48 GiB RAM L1 + 96 GiB NVMe L2, chunk 512 | Daily reference deployment, longest context |
+| [v20 + Grouped LMCache, FP8 RoPE](profiles/glm52-v20-lmcache-fp8rope/) | GLM-5.2 NVFP4 + NF3 hybrid · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 400,384 | 433,152 | 3,072 | 8 | TP4 / DCP4 / MTP3 | LMCache 48 GiB RAM L1 + 96 GiB NVMe L2, chunk 512 | Maintained four-GPU workstation LMCache deployment, longest context |
 
 ### 4x DGX Spark profiles
 
@@ -105,7 +107,7 @@ of the configuration.
 
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
 |---|---|---:|---:|---:|---:|---|---|---|
-| [GLM-5.2 EXL3 3.5 bpw fixed-MTP4, 4x Spark](profiles/glm52-exl3-r7-3.5bpw-mtp4-4x-spark/) | GLM-5.2 EXL3/Trellis 3.5 bpw + online K6 · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 262,144 | 1,156,864 | 4,096 | 8 | TP4 / DCP4 / MTP4 (fixed) | none accepted (native prefix caching; LMCache NVMe is an unaccepted candidate, 38.0x replay evidence) | sparkring operator default; SIRCL switchless transport |
+| [GLM-5.2 EXL3 3.5 bpw fixed-MTP4, 4x Spark](profiles/glm52-exl3-r7-3.5bpw-mtp4-4x-spark/) | GLM-5.2 EXL3/Trellis 3.5 bpw + online K6 · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 262,144 | 1,156,864 | 4,096 | 8 | TP4 / DCP4 / MTP4 (fixed) | native prefix caching only; an LMCache NVMe tier is research-only (replay evidence with conditions in the profile's RESULTS.md) | sparkring operator default; SIRCL switchless transport |
 | [GLM-5.2 SparkRing + SparkCache, 4x Spark](profiles/glm52-sparkring-sparkcache-4x-spark/) | GLM-5.2 MXFP4-Experts GPTQ · `nvfp4_ds_mla` | 458,752 | 500,224 | 4,096 | 8 | TP4 / DCP4 / MTP4 | SparkCache (not LMCache): DCP4-sharded NVMe context snapshots, 256 MiB arena | Switchless direct-cable serving with persistent context snapshots |
 
 ### 2x DGX Spark profiles
@@ -117,30 +119,37 @@ Spark systems. They should not be treated as interchangeable launch recipes.
 
 DSpark is the speculative-decoding proposer these profiles run (MTP-style
 probabilistic draft sampling); `(dspark)` in the parallelism column marks its
-MTP implementation.
+MTP implementation. "Stage C" in the first profile's slug and served-model
+name is a retained registry label, not a lifecycle stage: the profile is the
+GPU-only-KV, 1M-context DeepSeek V4 Flash DSpark configuration.
 
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
 |---|---|---:|---:|---:|---:|---|---|---|
-| [DeepSeek V4 Flash DSpark NVFP4 Stage C, 2x Spark](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | 1,515,055 | 8,192 | 8 | TP2 / MTP3 (dspark) | none | Two-node long-context DeepSeek profile |
-| [DeepSeek V4 Flash DSpark NVFP4 CPU Offload Candidate](profiles/deepseek-v4-flash-dspark-nvfp4-cpu-offload-candidate-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | not yet measured | 8,192 | 8 | TP2 / MTP3 (dspark) | SimpleCPUOffloadConnector: 2 GiB/rank CPU RAM, no NVMe | Test build with CPU RAM KV offload |
+| [DeepSeek V4 Flash DSpark NVFP4 Stage C, 2x Spark](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | 1,515,055 | 8,192 | 8 | TP2 / MTP3 (dspark) | none | GPU-only-KV, 1M-context two-node DeepSeek profile |
+| [DeepSeek V4 Flash DSpark NVFP4 CPU Offload Candidate](profiles/deepseek-v4-flash-dspark-nvfp4-cpu-offload-candidate-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | not yet measured | 8,192 | 8 | TP2 / MTP3 (dspark) | SimpleCPUOffloadConnector: 2 GiB/rank CPU RAM, no NVMe | Research-only, unmeasured: CPU RAM KV offload candidate (no results yet) |
 
 #### Qwen3.8-27B
 
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
 |---|---|---:|---:|---:|---:|---|---|---|
-| [Qwen3.8-27B EXL3 K5/K6 + LMCache, 2x Spark](profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 3,893,434 | 3,072 | 64 | TP2 / MTP3 | LMCache 4 GB L1 + 200 GB NVMe L2, chunk 1600 (≈59K / ≈3.0M tokens) | Near-BF16 EXL3 lane (0.00276 KLD), two-rail RoCE striping |
+| [Qwen3.8-27B EXL3 K5/K6 + LMCache, 2x Spark](profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 3,893,434 | 3,072 | 64 | TP2 / MTP3 | LMCache 4 GB L1 + 200 GB NVMe L2, chunk 1600 (≈59K / ≈3.0M tokens) | Near-BF16 EXL3 lane (0.00276 KLD as published by the checkpoint author, measured on an RTX 5090 under a different runtime; not reproduced on GB10), two-rail RoCE striping |
 
 ### 1x DGX Spark profile
 
-The Qwen3.8-27B profile below is the same bundle as its 2x entry, run with `TP=1` — one node
+The Qwen3.8-27B row below is the same bundle as its 2x entry — the profile at
+`profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/` run with `TP=1`; there is no separate 1x
+bundle. One node
 carries all weights and every KV head, so the KV pool shrinks and the LMCache chunk doubles to
 213 MB (an 8 GB L1 stages ~59K replayable tokens at TP1 versus ~118K at TP2). No ray, no
 striping, no second cache server. Measured: decode 23.8 / 43.1 / 85.2 tok/s at 4k context for
-cc1/2/4; prefill 330-667 tok/s from 4k to 32k.
+cc1/2/4; prefill 330-667 tok/s from 4k to 32k (greedy `llm-inference-bench` runs, KV pool
+1,669,678 tokens; conditions in that profile's RESULTS.md, "Single node (TP=1)" — note the 2x
+tables were measured at a different `gpu_memory_utilization`, so rows are not directly
+comparable across the two sections).
 
 | Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
 |---|---|---:|---:|---:|---:|---|---|---|
-| [Qwen3.8-27B EXL3 K5/K6 + LMCache, 1x Spark](profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 1,669,678 | 3,072 | 64 (lowering recommended for the smaller pool) | TP1 / MTP3 | LMCache 8 GB L1 + 200 GB NVMe L2, chunk 1600 (213 MB/chunk at TP1) | Single-Spark deployment of the same near-BF16 EXL3 lane |
+| [Same bundle, TP=1 variant (`qwen38-27b-exl3-k5k6-lmcache-2x-spark`)](profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 1,669,678 | 3,072 | 64 (lowering recommended for the smaller pool) | TP1 / MTP3 | LMCache 8 GB L1 + 200 GB NVMe L2, chunk 1600 (213 MB/chunk at TP1) | Single-Spark deployment of the same near-BF16 EXL3 lane |
 
 ### 1x GPU profile
 

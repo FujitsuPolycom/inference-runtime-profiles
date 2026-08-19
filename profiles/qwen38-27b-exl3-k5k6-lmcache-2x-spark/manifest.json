@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
   "profile": "qwen38-27b-exl3-k5k6-lmcache-2x-spark",
-  "status": "measured-live",
+  "status": "qualified",
+  "qualification_gate": "Measured live on the deployed 2x DGX Spark pair; conditions, measurements, and results in RESULTS.md and the benchmarks block below. Original status label: measured-live.",
   "captured_at_utc": "2026-08-17T00:00:00Z",
   "hardware": {
     "nodes": 2,

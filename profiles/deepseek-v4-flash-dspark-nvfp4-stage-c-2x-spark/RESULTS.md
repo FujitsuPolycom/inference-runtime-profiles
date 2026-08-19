@@ -1,8 +1,8 @@
 # Results
 
-Measurements below are client-observed results from the portable profile's
-source deployment. They are workload and acceptance-rate sensitive, especially
-at single-stream decode with DSpark speculative decoding.
+Measurements below are client-observed results from the source deployment on
+a 2x DGX Spark pair. They are workload and acceptance-rate sensitive,
+especially at single-stream decode with DSpark speculative decoding.
 
 ## Cold Prefill
 
@@ -22,6 +22,8 @@ at single-stream decode with DSpark speculative decoding.
 The engine reported a 1,515,055-token usable shared KV pool. Eight 128K
 sessions fit within that pool; eight 256K sessions do not.
 
-The deployment also passed a 353,861-token two-hop repository retrieval test.
-That first run included an on-demand Triton compilation, so its end-to-end
-latency is not a clean prefill benchmark.
+Long-context retrieval check — conditions: a single 353,861-token two-hop
+repository retrieval request on the deployment above; the run included an
+on-demand Triton compilation, and further conditions were not recorded.
+Measurement: whether the retrieval completed correctly. Result: pass. The
+end-to-end latency is unmeasured as a clean figure because of the compilation.

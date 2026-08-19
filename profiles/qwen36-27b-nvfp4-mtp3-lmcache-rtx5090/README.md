@@ -10,7 +10,7 @@ reuse across sessions.
 |---|---|
 | Model ID | lyf/Qwen3.6-27B-uncensored-heretic-v2-NVFP4-MTP |
 | Quantization | NVFP4 (mixed FP4) |
-| Served name | Qwen3.6-27B-FP8-MTP |
+| Served name | Qwen3.6-27B-FP8-MTP — the served name is an API-compatibility string retained from an earlier FP8 deployment and does not describe the weight format (NVFP4) |
 | Tensor parallel | 1 |
 | MTP | 3 |
 | Max context | 131,072 |
@@ -25,8 +25,23 @@ reuse across sessions.
 | GPU | 1x NVIDIA RTX 5090, 32 GiB |
 | System RAM | 919 GiB (256 GiB pinned for LMCache L1) |
 | CUDA | CUDA 13.0-class runtime; SM120 kernels |
-| Storage | Optane RAID0 (~200 GB) for LMCache L2 |
+| Storage | Optane RAID0 (~200 GB device) for LMCache L2 (180 GB configured capacity) |
 | Parallelism | TP1 / MTP3 |
+
+## LMCache tier
+
+| Setting | Value |
+|---|---|
+| L1 | 256 GB pinned host RAM (lazy allocation, 8 GB initial) |
+| L2 | `fs_native` on Optane RAID0, 180 GB capacity, O_DIRECT |
+| Chunk size | 1600 tokens (the model's mamba block) |
+| Eviction | LRU, watermark 0.80, ratio 0.20 |
+| Connector | `LMCacheMPConnector`, `kv_role: kv_both` |
+
+Configuration as recorded in this profile's `compose.yml` and
+`manifest.json`. Measured replay figure for this deployment: LMCache L1
+store / retrieve 0.011 s / 0.001 s per 1600-token chunk (see the RTX 5090
+performance snapshots in [`../../HARDWARE.md`](../../HARDWARE.md)).
 
 ## Apply
 

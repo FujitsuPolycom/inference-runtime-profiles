@@ -34,7 +34,8 @@ Coding peak, C1: 5/5 runs, median 27.3, max 28.8 tok/s.
 ## MTP4 acceptance
 
 96.64% (268 events; per-position accepted [266, 263, 255, 252]) — CKV-gather evidence,
-2026-08-11. The FP8/65K predecessor configuration measured 96.996%.
+2026-08-11. The fp8_ds_mla / 65,536-context configuration recorded in
+`glm52-exl3-r7-mtp4-kv925-20260811.json` measured 96.996%.
 
 ## Exact-Q40 acceptance bracket (2026-08-12, `glm52-exl3-r7-mtp4-q40-block8-20260812.json`)
 
@@ -44,7 +45,13 @@ Prefill nonregression: machine verdict fail on one cell (64K, -0.12% vs envelope
 recorded with an operator waiver as measurement-neutral; the failure record is preserved in
 the evidence file.
 
-## CKV-gather A/B (2026-08-11, sole delta = two environment variables)
+## CKV-gather A/B (2026-08-11)
+
+Sole delta between the arms: the two CKV-gather environment variables,
+`VLLM_B12X_MLA_CKV_GATHER` and `VLLM_B12X_MLA_CKV_GATHER_MAX_TOKENS` (the pair
+this repository's b12x profiles use to enable the gather; the exact values for
+this run are recorded in the sparkring evidence files, not in this
+repository).
 
 Prefill 8K +14.9% (435 to 500 tok/s), 16K +39.2% (437 to 608), 64K +29.7% (434 to 563),
 128K +29.8% (425 to 551). A +5.4% C8/16K decode delta was observed but is explicitly not
@@ -58,7 +65,7 @@ after engine restart at TTFT **1.477 s = 38.0x** (external prefix hit 99.2%, nat
 Not a deterministic-output gate: cold and replay text differed. Restart contract: recycle the
 LMCache servers before engine relaunch — they hold stale CUDA IPC ownership otherwise.
 
-## Predecessor configuration (scoped evidence)
+## fp8_ds_mla / 65,536-context configuration (`glm52-exl3-r7-mtp4-kv925-20260811.json`, scoped evidence)
 
 A 2026-08-11 capture (`glm52-exl3-r7-mtp4-kv925-20260811.json`) at fp8_ds_mla KV, 65,536
 context, 2,048 batch tokens measured decode C1 34.6 / C2 51.4 / C4 77.0 / C8 85.7 aggregate

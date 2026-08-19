@@ -1,9 +1,12 @@
 # GLM-5.2 v20 + Grouped LMCache, FP8 RoPE
 
-Daily-driver profile for the four-GPU PCIe workstation described under
-Reference hardware below (deployment captured 2026-07-24; see
-[`manifest.json`](manifest.json)). Stock v20 runtime with grouped LMCache added; the experimental
-replicated-indexer and sparse-decode overlays are disabled.
+Four-GPU PCIe workstation profile combining the v20 runtime image with a
+DCP-grouped LMCache tier (deployment captured 2026-07-24; see
+[`manifest.json`](manifest.json)). The replicated-indexer and sparse-decode
+code paths are present in the image and disabled by this configuration.
+
+Status: `implemented` — captured live from the running deployment (original
+status label: live-captured); measured snapshots in [RESULTS.md](RESULTS.md).
 
 ## Checkpoint
 
@@ -28,7 +31,7 @@ replicated-indexer and sparse-decode overlays are disabled.
   dimension that shards the KV cache across ranks; MTP speculative decoding
   with 3 draft tokens)
 
-## IMPORTANT: P2P Settings - Without this expect -30% decode loses at C1+
+## Required NVIDIA P2P / Resizable BAR settings — without them, C1 decode falls from 103.4 to 60.8 tok/s at 8K (measured on this host)
 The NVIDIA P2P and Resizable BAR settings are required for the reference
 decode results. Verify them with the repository hardware checks before use on
 another machine.

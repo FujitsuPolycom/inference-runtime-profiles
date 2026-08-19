@@ -9,12 +9,15 @@ payloads.
 This profile combines two explicitly separated evidence sets:
 
 1. a complete 20-cell serving matrix from the GPTQ RC1 configuration;
-2. measurements of SparkCache, the persistent context cache, from the later v47 deployment.
+2. measurements of SparkCache, the persistent context cache, from the
+   SparkCache-enabled overlay deployment (source bundle manifest SHA-256
+   `49e68461b35130beed1fd71f138bd2b75d4f9c087811e9a316dfe0f8f338118a` in
+   `manifest.json`).
 
 The two deployments used the same checkpoint, TP4/DCP4 layout, KV geometry,
 batch limits, CUDA-graph plan, and switchless fabric. The serving matrix
-predates the v47 SparkCache overlay, so it is not mislabeled as a cache-enabled
-benchmark. See [RESULTS.md](RESULTS.md) for the exact boundary and the
+predates the SparkCache-enabled overlay, so it is not mislabeled as a
+cache-enabled benchmark. See [RESULTS.md](RESULTS.md) for the exact boundary and the
 machine-readable evidence record.
 
 This profile also points to the public
@@ -59,11 +62,12 @@ throughput.
 
 There are two source lanes:
 
-1. **Measured reference lane (v47):** the exact locally built image and
+1. **Measured reference lane (the SparkCache-enabled overlay deployment):**
+   the exact locally built image and
    attested launch overlay used by the reference cluster. Its identities are
    recorded in `manifest.json`, but the complete private vLLM overlay and
    orchestration layer are not published.
-2. **Public next lane:** SparkRing commit
+2. **Published SparkRing source:** SparkRing commit
    `7840ce58794126c73f1076538938749aedb189b1`, which publishes SIRCL,
    SparkCache, the pinned runtime builder, and fail-closed public patches. Its
    larger reference vLLM overlay needs provenance cleanup or independent
@@ -120,15 +124,17 @@ communicator.
 
 ## SparkCache
 
-The v47 profile enables native SparkCache restore with a 256 MiB native
+The SparkCache-enabled overlay deployment enables native SparkCache restore with a 256 MiB native
 arena and eight I/O workers. At approximately 393K tokens, foreground snapshot
 work measured 3.63-4.16 seconds per rank and background commit completed in
 11.23-15.55 seconds. The asynchronous store path avoided an 18-second
 freeze-the-world event, though strict interference budgets were not yet met.
 
-The public next lane adds stronger immutable checkpoint identity and source
+The published SparkRing source adds stronger immutable checkpoint identity and source
 contracts. Migrate those changes as a separately attested release; do not mix
-v48-next hashes into a v47 manifest.
+hashes from the published SparkRing branch (commit
+`7840ce58794126c73f1076538938749aedb189b1`) into the measured deployment's
+manifest.
 
 ## Safety and privacy
 

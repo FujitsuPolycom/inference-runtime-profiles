@@ -5,7 +5,7 @@ cabled DGX Spark ring at TP4/DCP4, with speculative decoding locked at four draf
 dynamic per-token NVFP4 latent KV with FP8 RoPE at 262K context, and the sparkring project's
 switchless RDMA collective transport.
 
-**Status: `accepted` — the sparkring appliance's operator default.** Not zero-build-ready:
+**Status: `qualified` — the sparkring appliance's operator default (sparkring maturity label: `accepted`).** Not zero-build-ready:
 the runtime image is locally built (`final_image: null`; live-validated image ID
 `sha256:02881d5229d4...`), and the remaining promotion gate is an ARM64 image build from a
 clean checkout passing the four-rank checklist against that exact image ID. The sparkring
@@ -75,7 +75,8 @@ this profile ships no `compose.yml`.
 
 - Aggregate throughput figures are aggregate, not per-request; no repeat distributions.
 - The 1,156,864-token KV pool has not repeated the >=512,000-simultaneously-resident-tokens
-  long-context gate (proven on the 675,840-token FP8/65K predecessor configuration only).
+  long-context gate (proven only on the 675,840-token fp8_ds_mla / 65,536-context
+  configuration recorded in `glm52-exl3-r7-mtp4-kv925-20260811.json`; see RESULTS.md).
 - Fixed MTP5 is unsupported by the qualified image (Q48 requires contract changes and a
   rebuilt native transport cap).
 - Claims the sparkring repository itself rejects: blanket correctness, all-shape speedup,

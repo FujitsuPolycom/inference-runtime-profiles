@@ -38,7 +38,8 @@ options nvidia NVreg_RegistryDwords="ForceP2P=0x11;RMForceP2PType=1;RMPcieP2PTyp
 Changing NVIDIA module parameters requires `update-initramfs -u` and a reboot.
 After reboot, confirm the active values in `/proc/driver/nvidia/params`.
 
-A controlled A/B on the v20 profile, changing only this host state, measured the following. C1 decode increased from 60.8
+Measured on `profiles/glm52-v20-lmcache-fp8rope/` (the GLM-5.2 v20 + Grouped
+LMCache, FP8 RoPE profile), varying only the NVIDIA registry state: C1 decode increased from 60.8
 to 103.4 tok/s at 8K and from 59.2 to 95.8 tok/s at 64K. Prefill at 64K
 remained effectively unchanged (3,007 versus 3,019 tok/s). This makes driver
 state part of every reproducible performance record, not an optional tuning
@@ -116,7 +117,7 @@ for exact runtime settings, source-status caveats, and cache measurements.
 ## Interpretation
 
 - GPU KV capacity is a VRAM allocation, not LMCache capacity.
-- The GLM-5.2 v20 + Grouped LMCache profile (`profiles/glm52-v20-lmcache-fp8rope/`) uses a 48 GB host-RAM LMCache tier; its NVMe filesystem is
+- The GLM-5.2 v20 + Grouped LMCache, FP8 RoPE profile (`profiles/glm52-v20-lmcache-fp8rope/`) uses a 48 GB host-RAM LMCache tier; its NVMe filesystem is
   available for general caches but is not automatically an LMCache KV tier.
 - Increasing DCP reduces KV duplication but adds communication.
 - MTP increases decode work per scheduling step and changes the useful comparison
@@ -133,7 +134,7 @@ The Qwen3.6-27B profile targets this class of single-GPU host.
 | GPU | 1x NVIDIA RTX 5090, 32 GiB |
 | System RAM | 919 GiB (LMCache L1 uses 256 GiB as pinned host memory) |
 | CUDA | CUDA 13.0-class runtime; SM120 kernels |
-| Storage | Optane RAID0 (~200 GB) for LMCache L2; pmem for HF/vLLM caches |
+| Storage | Optane RAID0 (~200 GB device; 180 GB configured LMCache L2 capacity) for LMCache L2; pmem for HF/vLLM caches |
 | Parallelism | TP1 / MTP3 |
 
 ### RTX 5090 performance snapshots

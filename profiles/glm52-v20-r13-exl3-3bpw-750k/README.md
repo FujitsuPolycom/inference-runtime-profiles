@@ -7,7 +7,7 @@ Live-captured single-node four-GPU profile for the `brandonmusic/GLM-5.2-EXL3-TR
 | Field | Value |
 |---|---|
 | Checkpoint | [`brandonmusic/GLM-5.2-EXL3-TR3-3.0bpw`](https://huggingface.co/brandonmusic/GLM-5.2-EXL3-TR3-3.0bpw) |
-| Runtime | Gilded Gnosis v20 r13, vLLM `0.11.2.dev280…r13` |
+| Runtime | Gilded Gnosis v20 r13, vLLM `0.11.2.dev280…r13` — "r13" (like the sibling's "R7") is the revision tag of the Gilded Gnosis private vLLM image lineage; the immutable image digest below is the durable identifier |
 | Immutable image | `voipmonitor/vllm@sha256:02796036c96a52fda0919aa260c45c70bc97d8e662a6ae5e614b5f987c20851b` |
 | Parallelism | TP4 / DCP4 / MTP3 (tensor-parallel 4, decode-context-parallel 4, multi-token-prediction speculative depth 3) |
 | API model / port | `GLM-5.2-EXL3-TR3-3.0bpw` / 5810 |

@@ -1,8 +1,10 @@
-# Component Inventory — GLM-5.2 EXL3 TP4/DCP4 Production Stack (ai01)
+# Component Inventory — GLM-5.2 EXL3 TP4/DCP4 Production Stack (`<inference-host>`)
 
 **Serving endpoint:** `http://<host>:5810/v1`; served model `GLM-5.2-EXL3-TR3-3.0bpw`; OpenAI-compatible host-network service.
 **Host:** single-node Debian 13 / kernel `7.0.14-4-pve`; captured live 2026-08-17.
 **Container:** `glm52-v20-r7-exl3`; healthy since 2026-07-30, restart count `0`.
+The container name predates the image change and does not indicate the runtime
+revision; the running image digest below (v20 r13) is authoritative.
 
 ## 1. Hardware and host policy
 

@@ -1,6 +1,7 @@
 {
   "profile": "glm52-v20-lmcache-fp8rope",
-  "status": "live-captured",
+  "status": "implemented",
+  "status_note": "Captured live from the running deployment on 2026-07-24 (original status label: live-captured); measured operational snapshots are in RESULTS.md.",
   "captured_at": "2026-07-24",
   "hardware": {
     "gpu": "4x NVIDIA RTX PRO 6000 Blackwell, 96 GiB each",

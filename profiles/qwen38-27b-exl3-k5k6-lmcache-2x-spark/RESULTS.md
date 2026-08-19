@@ -21,10 +21,12 @@ Each row adds one change to the row above, so the ladder doubles as an ablation.
 | TP2 over one cable | 17.0 |
 | + fork PR-318 stack + MTP3 | 23.7 |
 | + EXL3 CUDA-graph decode | 29.6 |
-| Production (MTP2 throughput mode, FP8 KV, two-rail) | **27.0** |
-| MTP3 interactive variant | 28.6 |
+| MTP2 throughput mode (FP8 KV, two-rail) | **27.0** |
+| MTP3 (shipped production default; FP8 KV, two-rail) | 28.6 |
 
-MTP2 versus MTP3 is a deliberate trade: MTP2 gives up ~6% single-stream and returns
+The profile ships depth 3 as the production default (manifest
+`num_speculative_tokens: 3`); MTP2 is the labeled throughput alternative, a
+deliberate trade: MTP2 gives up ~6% single-stream and returns
 +8% at 16 streams, +12% at 32, +4% at 64, and doubles the KV pool headroom.
 
 ## Concurrency (256-token streams, uniform)

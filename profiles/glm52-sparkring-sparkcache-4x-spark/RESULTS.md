@@ -108,8 +108,9 @@ At approximately 393K tokens, per-rank measurements were:
 | Background commit | 11.23-15.55 s |
 
 The asynchronous store path avoided an approximately 18-second
-freeze-the-world event. 30 seconds and
-post-first-token decode increase by 1.78 seconds.
+freeze-the-world event. Snapshot activity extends time-to-first-token by up to
+30 seconds and post-first-token decode by 1.78 seconds (the conditions behind
+these two figures were not otherwise recorded).
 
 A separate no-reload 32K overlap test observed a 1.1643-second four-rank
 snapshot union while an unrelated 1,023-token carrier request continued before

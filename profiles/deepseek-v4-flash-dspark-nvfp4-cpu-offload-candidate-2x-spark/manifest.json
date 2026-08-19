@@ -41,7 +41,8 @@
     "Isolated to port 18007 with separate compose project name",
     "Not registered in LiteLLM (test only)"
   ],
-  "status": "ready_to_deploy",
+  "status": "research-only",
+  "qualification_gate": "Configuration is prepared and deployable (original status label: ready_to_deploy), but no measurements have been recorded; RESULTS.md is a measurement plan only.",
   "mounts": [
     {
       "type": "bind",

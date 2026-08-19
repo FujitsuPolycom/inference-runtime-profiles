@@ -1,7 +1,8 @@
 {
   "schema_version": 1,
   "profile": "glm52-sparkring-sparkcache-4x-spark",
-  "status": "measured-v47-reference-with-public-v48-next-source",
+  "status": "qualified",
+  "qualification_gate": "Measurements come from the SparkCache-enabled overlay deployment (generation v47, identities recorded below); the public SparkRing source tree at commit 7840ce58794126c73f1076538938749aedb189b1 (generation v48-next) differs from the measured build and was not deployed for these measurements. Original status label: measured-v47-reference-with-public-v48-next-source.",
   "captured_at_utc": "2026-07-29T00:00:00Z",
   "hardware": {
     "nodes": 4,
