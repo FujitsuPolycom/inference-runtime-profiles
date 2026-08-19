@@ -140,6 +140,29 @@ The launch is the ring's DeepSeek container spec with exactly these changes:
 | Bind mounts | 3 patch files plus 5 infrastructure mounts | the ring's remaining 43 mounts serve its four-node transport and adaptive-depth machinery, neither of which is enabled here |
 | Cache tier | wheel install + in-container MP server + `--kv-transfer-config` + `expandable_segments:False` | the connector pins KV via CUDA IPC; the VMM allocator must not remap. Server and engine share the container lifecycle, so a replacement can never leave a server holding a dead engine's IPC mappings |
 
+**Sizing rule — do not raise `--kv-cache-memory-bytes` while the cache tier is
+enabled.** 10 GiB is qualified. Attempts at 24 GiB and 32 GiB both die the same
+way: the key-value pool allocates successfully (4,246,848 and 5,662,523 tokens
+respectively), then a worker is killed by signal during LMCache connector
+initialisation, surfacing as `RuntimeError("cancelled")` from the shared-memory
+broadcast. Halving `--max-model-len` while holding the budget at 24 GiB fails
+identically, so the context limit is not the cause: the MP connector registers
+the entire allocation through CUDA IPC, and a pool that size exceeds what the
+tier can map alongside its own staging buffer.
+
+The failure is not contained. On the reference pair, the follower node reached
+a state where its kernel still answered ICMP and accepted TCP on every
+listening port, while no connection — including SSH — could complete a
+handshake, because userspace could not obtain memory to fork. Nothing recovers
+that node remotely; it requires a power cycle. **Treat the key-value budget as
+a hardware-safety parameter on unified memory, not a tuning knob**, and change
+it only with physical or out-of-band access to both nodes.
+
+Note that a large budget is unnecessary in any case: per-token cost falls as
+the context limit rises (bounded cache groups amortise over more tokens), and
+at a 1,048,576-token limit the pool costs about 6 KB per token, so 10 GiB
+already holds roughly 1.5 full contexts.
+
 Known limitations and open tuning: speculative depth 5 is the checkpoint's
 floor, not a choice — `dspark_block_size` is 5 and the engine rejects lower
 values; depth 7 serves but measures slower. Per-position acceptance falls to
