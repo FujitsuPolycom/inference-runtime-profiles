@@ -158,6 +158,15 @@ that node remotely; it requires a power cycle. **Treat the key-value budget as
 a hardware-safety parameter on unified memory, not a tuning knob**, and change
 it only with physical or out-of-band access to both nodes.
 
+**A long-context prefill is the memory-critical operation.** With the
+qualified 8 GiB LMCache L1 buffer, a 64K-token prefill drove the serving node
+to 113 GB used of ~121 GB with swap active, and the engine core was killed
+shortly afterwards — the API server then shut down cleanly, so the container
+exits 0 and the failure resembles a graceful stop rather than a crash. Size L1
+at 4 GiB unless you have measured otherwise, and include a long-context cell
+in any acceptance battery: the correctness and concurrency gates all use short
+prompts and never reach this limit.
+
 Note that a large budget is unnecessary in any case: per-token cost falls as
 the context limit rises (bounded cache groups amortise over more tokens), and
 at a 1,048,576-token limit the pool costs about 6 KB per token, so 10 GiB

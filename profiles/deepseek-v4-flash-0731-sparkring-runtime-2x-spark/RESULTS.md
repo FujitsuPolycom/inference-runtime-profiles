@@ -49,6 +49,46 @@ At a 32,768-token context the same cells measure 32.1 tok/s at one stream and
 own prompt prefix, so after the first request the cache tier serves it. They
 are not cold-prefill measurements.
 
+## Prefill and coding throughput
+
+Measured at concurrency 1 with the benchmark harness's exact-token targeting.
+Prefill is cold in each cell (distinct prompts):
+
+| Context | Prompt tokens | Time to first token | Prefill throughput |
+|---|---:|---:|---:|
+| 4K | 4,096 | 2.58 s | 1,589 tok/s |
+| 8K | 8,192 | 4.52 s | 1,814 tok/s |
+| 64K | 65,536 | 40.38 s | 1,623 tok/s |
+
+Prefill throughput is roughly flat from 4K to 64K, so time to first token
+scales close to linearly with prompt length.
+
+**Coding output decodes far faster than prose.** A sequential coding probe
+(a Sieve of Eratosthenes implementation, streaming, 2,000 max tokens, three
+runs) measured **59.9 tok/s median** (mean 59.1, max 62.2, 3 of 3 runs
+successful), against 33-37 tok/s on general prose in the same configuration.
+Speculative draft acceptance rises sharply on structured output, so the
+workload most people point this deployment at is roughly 1.6x faster than the
+headline single-stream figure suggests. An unrelated engine serving the same
+checkpoint family reports the same pattern — 1.38x speculation gain on its
+mixed suite against 1.71x on structured content.
+
+## Memory headroom is thin, and long-context work can exhaust it
+
+**Observed on the qualified configuration with an 8 GiB LMCache L1 buffer.**
+During a benchmark run that included a 64K-token prefill cell, the serving
+node reached 113 GB used of ~121 GB with 7-8 GB available and swap actively in
+use. The engine core was then killed during a subsequent decode cell; the API
+server, finding its core gone, shut down cleanly, so the container exited 0
+with no traceback — the failure looks like a graceful stop rather than a
+crash, and the benchmark simply recorded zeros for the remaining cells.
+
+The correctness and concurrency gates elsewhere in this document all use short
+prompts and never approach this limit. Treat a long-context prefill as the
+memory-critical operation on this deployment, size the LMCache L1 buffer
+toward the lower end of the 4-8 GiB range, and include a long-context cell in
+any acceptance battery so this failure mode cannot pass unnoticed.
+
 ## Output correctness under speculation
 
 The reproduction that deterministically corrupts the from-source
@@ -103,6 +143,8 @@ repository rather than only from a running deployment.
 
 ## Not yet measured
 
-Cold-prefill throughput, long-context cells beyond 32K, time-to-first-token
-with and without cache replay, and the effect of the runtime's built-in
-speculation confidence scheduler.
+Time to first token with a cache-tier hit against a cold prefill of the same
+prompt, decode throughput at contexts beyond 32K, and the effect of the
+runtime's built-in speculation confidence scheduler. A repeat of the 64K
+prefill cell with a 4 GiB LMCache L1 buffer, to confirm it survives, is
+outstanding.

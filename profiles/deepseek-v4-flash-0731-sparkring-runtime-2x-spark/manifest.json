@@ -53,7 +53,7 @@
     "topology": "one MP server per rank, inside the engine's container (shared lifecycle removes the stale-CUDA-IPC restart hazard); ZMQ port 6570, metrics 6580",
     "connector": "LMCacheMPConnector, kv_role kv_both, load_failure_policy recompute",
     "chunk_tokens": 256,
-    "l1": "8 GiB lazy, LRU",
+    "l1": "8 GiB lazy, LRU as qualified; 4 GiB recommended \u2014 an 8 GiB buffer plus a 64K-token prefill exhausted node memory on the reference pair",
     "l2": "fs_native, 200 GiB per rank, buffered I/O, path encodes checkpoint revision and geometry (lmcache-l2-dsv4-0731-spec-b256)",
     "registered_layers": 170,
     "engine_env_requirement": "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:False when the tier is enabled"
@@ -64,12 +64,21 @@
     "mean_acceptance_length": 2.8,
     "draft_acceptance_rate": 0.36,
     "replay_restore_18688_tokens_seconds": 0.051,
-    "note": "Client-observed unless stated; conditions in RESULTS.md. Cold prefill and TTFT unmeasured.",
+    "note": "Client-observed unless stated; conditions in RESULTS.md. Coding output decodes about 1.6x faster than prose because speculative acceptance rises on structured content. A 64K prefill on this configuration (8 GiB LMCache L1) exhausted node memory and the engine core was killed; see the memory-headroom section of RESULTS.md.",
     "single_stream_decode_engine_peak_tok_s": 40,
     "single_stream_decode_depth7_tok_s": 31.3,
     "aggregate_tok_s_8_streams": 120.5,
     "aggregate_tok_s_16_streams": 160.3,
     "kv_occupancy_at_16_streams": 0.058,
-    "kv_pool_tokens_at_10gib": 581194
+    "kv_pool_tokens_at_10gib": 581194,
+    "coding_decode_tok_s_median": 59.9,
+    "coding_decode_tok_s_mean": 59.1,
+    "coding_decode_tok_s_max": 62.2,
+    "prefill_tok_s_4k": 1589,
+    "prefill_tok_s_8k": 1814,
+    "prefill_tok_s_64k": 1623,
+    "ttft_seconds_4k": 2.58,
+    "ttft_seconds_8k": 4.52,
+    "ttft_seconds_64k": 40.38
   }
 }
