@@ -27,10 +27,9 @@ The runtime is **not built here**: it is the SparkRing project's docker image
 (`FujitsuPolycom/sparkring` — its `runtime/exl3-r7/pins.json` is the
 component identity, `runtime/` the build recipe), image digest
 `sha256:02881d5229d4f4d1cbba0cf40537492a2a505b9d4e43bbfe9a0b2a7bd0584513`
-(tag `sparkring/glm52-exl3-r7-3.5bpw:r34-sm121a-flat2-20260810`), plus that
-project's runtime overlay files bind-mounted over the image (the 47 paths in
-[leg3pair.binds](leg3pair.binds)). This profile records how to run that
-runtime on a two-node pair.
+(tag `sparkring/glm52-exl3-r7-3.5bpw:r34-sm121a-flat2-20260810`), plus three
+patch files bind-mounted over it. This profile records how to run that runtime
+on a two-node pair.
 
 ## Requirements
 
@@ -39,11 +38,31 @@ runtime on a two-node pair.
 - The SparkRing runtime image loaded on both nodes (build per the SparkRing
   repository's runtime recipe, or transfer the image from an existing
   SparkRing deployment; verify the digest above).
-- The SparkRing runtime overlay files staged at their `/var/tmp/...` paths on
-  both nodes — the exact path list is [leg3pair.binds](leg3pair.binds); the
-  file contents correspond to the SparkRing repository's `runtime/` and
-  `spark_transport/integrations/vllm/` trees. On the reference pair they were
-  copied verbatim from a live SparkRing deployment.
+- **Three patch files mounted over the image**, all obtainable from the
+  SparkRing repository rather than from a running deployment:
+  - `kernel_warmup.py` over
+    `/opt/venv/lib/python3.12/site-packages/vllm/model_executor/warmup/` —
+    apply `runtime/hotfixes/deployed-r34-20260810/model_executor__warmup__kernel_warmup.py.patch`.
+    Without it the first non-GLM model served from this image dies during
+    memory determination.
+  - `quack/copy_utils.py` and `quack/layout_utils.py` over the image's `quack`
+    package — annotation fixes for a `quack`/`cutlass` version skew that
+    otherwise raises `module cutlass.cute.core has no attribute ThrMma`.
+  - the `tvm-ffi` directory on `PYTHONPATH` — without it the workers raise
+    `make_kwargs_wrapper() got an unexpected keyword argument`.
+
+  **Verified minimal set:** the reference pair serves and passes every gate
+  in [RESULTS.md](RESULTS.md) with exactly 8 bind mounts — those three patches
+  plus the model, cache, HuggingFace-cache and transport-library mounts.
+  [leg3pair.binds](leg3pair.binds) ships the reference pair's full 51-mount
+  list, captured from a live SparkRing deployment; 43 of those 51 are inert
+  under this configuration, because the custom four-node transport that
+  imports them is disabled at TP2. Filtering the list to the 8 that matter:
+
+  ```bash
+  grep -E 'kernel_warmup|/quack/|tvm-ffi|:/models/|:/cache|huggingface|libspark_transport_capi' \
+      leg3pair.binds > minimal.binds
+  ```
 - The checkpoint at
   `$HOME/work/qwen38-exl3/model/DeepSeek-V4-Flash-0731` on both nodes
   (`huggingface-cli download deepseek-ai/DeepSeek-V4-Flash-0731 --revision
@@ -82,11 +101,13 @@ Place the wheel in `$HOME/work/qwen38-exl3/wheels-t212/` on both nodes.
 
 ## Deploy
 
-1. Stage overlays, model, wheel, and the two scripts
+1. Stage the three patch files, model, wheel, and the two scripts
    ([leg3pair-launch.sh](leg3pair-launch.sh) →
    `$HOME/work/qwen38-exl3/`, [leg3pair-inner.sh](leg3pair-inner.sh) →
-   `/var/tmp/`), plus [leg3pair.env](leg3pair.env) and
-   [leg3pair.binds](leg3pair.binds) → `/var/tmp/`, on both nodes.
+   `/var/tmp/`), plus [leg3pair.env](leg3pair.env) and a bind list —
+   either [leg3pair.binds](leg3pair.binds) as shipped or the 8-line minimal
+   filter above — at `/var/tmp/leg3pair.binds` on both nodes. Mount sources
+   must exist at the paths the bind list names.
 2. Launch rank 1 first, then rank 0 (each on its own host):
    `RANK=1 bash leg3pair-launch.sh` / `RANK=0 bash leg3pair-launch.sh`.
    `LMCACHE=0` launches without the cache tier. First launch pays a long
@@ -115,10 +136,16 @@ The launch is the ring's DeepSeek container spec with exactly these changes:
 | Custom transport | `SPARK_TP4_*` / `VLLM_SPARK_TP4_*` env removed | its source admits only `world_size == 4`; NCCL carries TP2 collectives (`VLLM_SPARK_SHARED_CAPTURE_STREAM=1` is kept — a source-patch gate the speculative graph capture needs, not a transport setting) |
 | NCCL | single rail `rocep1s0f0`, GID 0, subnet-aware routing off | point-to-point pair, not a switchless 4-cycle |
 | Speculation depth | 5 (ring runs 7) | 5 = the checkpoint's `dspark_block_size`, the validator's minimum; 7 also valid |
-| Memory envelope | `--max-model-len 131072`, `--kv-cache-memory-bytes` 10 GiB, `--max-num-seqs 8`, `--gpu-memory-utilization 0.70` | TP2 doubles per-rank weight residency (~84 GB); 0.70 is the GB10 unified-memory ceiling above which loads are OOM-killed silently |
+| Memory envelope | `--kv-cache-memory-bytes` 10 GiB, `--max-num-seqs 32`, `--gpu-memory-utilization 0.70` | 0.70 is the GB10 unified-memory ceiling above which loads are OOM-killed silently, with no error on the rank that dies |
+| Bind mounts | 3 patch files plus 5 infrastructure mounts | the ring's remaining 43 mounts serve its four-node transport and adaptive-depth machinery, neither of which is enabled here |
 | Cache tier | wheel install + in-container MP server + `--kv-transfer-config` + `expandable_segments:False` | the connector pins KV via CUDA IPC; the VMM allocator must not remap. Server and engine share the container lifecycle, so a replacement can never leave a server holding a dead engine's IPC mappings |
 
-Known limitations: depth 5 per-position acceptance is ~0.76/0.55/0.27/0.14/
-0.07 (a depth-3 sweep is the obvious next tuning step); the memory envelope
-has unmeasured headroom (KV usage <1% under single-stream load); concurrency
-and long-context benchmarks are not yet published.
+Known limitations and open tuning: speculative depth 5 is the checkpoint's
+floor, not a choice — `dspark_block_size` is 5 and the engine rejects lower
+values; depth 7 serves but measures slower. Per-position acceptance falls to
+0.14 and 0.07 at the last two positions, so the runtime's built-in confidence
+scheduler (shipped disabled as `VLLM_DSPARK_CONFIDENCE_SCHEDULER=off`) is an
+untested opportunity to stop paying for draft work that rarely lands. The
+memory envelope is conservative: the engine reports 581,194 key-value cache
+tokens for the 10 GiB budget and 101 GiB free after load, and measured cache
+occupancy is 5.8% at sixteen concurrent streams.

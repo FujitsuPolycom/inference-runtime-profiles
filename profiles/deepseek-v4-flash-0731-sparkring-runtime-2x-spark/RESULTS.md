@@ -10,14 +10,44 @@ correctness (planted key-value facts at fixed depths in deterministic filler).
 
 | Configuration | Single-stream decode | Conditions |
 |---|---|---|
-| This profile (DSpark depth 5) | **~40 tok/s** | engine-reported generation throughput, 1 running request, 2K-token generation |
+| This profile (DSpark depth 5) | **36-40 tok/s** | client-observed 36.2, engine-reported peak 38.6-40; 1 request, 512-2048 token generations |
 | Same pair, from-source build, no speculation | 28.3 tok/s | 90 s sustained, client rate = server rate |
+| Speculative depth 7 | 31.3 tok/s | same measurement, otherwise identical configuration |
 
-Speculation telemetry at depth 5 (engine `SpecDecoding metrics` during the
-40 tok/s measurement): mean acceptance length ~2.8, per-position acceptance
-0.76 / 0.55 / 0.27 / 0.14 / 0.07, draft acceptance ~36%. Positions 4-5
-contribute little; a depth-3 configuration is expected to match or beat this
-figure and has not yet been measured.
+Speculation therefore contributes about **1.35x** over unspeculated decode on
+this hardware. An unrelated engine (a `ds4` fork serving the same checkpoint
+family on a single Spark with 2-bit weights) reports 1.38x for its own DSpark
+implementation, which is consistent.
+
+**Depth is not a free parameter.** The checkpoint declares
+`dspark_block_size: 5` and the engine rejects `num_speculative_tokens` below
+it, so depth 3 cannot be run at all; depth 7 runs and passes every correctness
+check but measures 14% slower. Depth 5 is both the floor and the best
+measured value.
+
+Speculation telemetry at depth 5: mean acceptance length 2.6-2.8, per-position
+acceptance 0.76 / 0.55 / 0.27 / 0.14 / 0.07, draft acceptance 35-37%.
+
+## Concurrency
+
+Client-observed aggregate throughput, 256-token prompts, 512-token
+generations, 180 s per cell:
+
+| Concurrency | `--max-num-seqs 8` | `--max-num-seqs 32` |
+|---:|---:|---:|
+| 1 | 36.2 tok/s | — |
+| 4 | 84.3 tok/s | — |
+| 8 | 120.5 tok/s | 117.8 tok/s |
+| 16 | — | **160.3 tok/s** |
+
+Key-value cache occupancy peaked at 2.9% (8 streams) and 5.8% (16 streams) of
+the 10 GiB budget, so the sequence limit rather than memory is what bounds
+concurrency here. The profile ships `--max-num-seqs 32` for that reason.
+
+At a 32,768-token context the same cells measure 32.1 tok/s at one stream and
+52.2 tok/s at four. Those are **warm-prefix** figures: each worker reuses its
+own prompt prefix, so after the first request the cache tier serves it. They
+are not cold-prefill measurements.
 
 ## Output correctness under speculation
 
@@ -42,7 +72,37 @@ stack without speculation (including a 77,568-token replay restored in
 0.098 s), establishing the tier's behavior at longer contexts; the
 speculation-active battery above is the qualifying run for this profile.
 
+## Minimal bind-mount set
+
+The reference pair's launcher mounts 51 paths over the image, captured from a
+running SparkRing deployment. Removing them in three groups — the
+`/opt/sparkring-*` contracts, the `/opt/spark-vllm/` adapters, and the
+site-packages overrides — fails on every group individually:
+
+| Group removed | Fatal error |
+|---|---|
+| `/opt/sparkring-*` (12) | `make_kwargs_wrapper() got an unexpected keyword argument map_dataclass_to_tuple` |
+| `/opt/spark-vllm/` (25) | `ModuleNotFoundError: No module named spark_adaptive_mtp_launch_policy_controller` |
+| site-packages except `kernel_warmup.py` (9) | `module cutlass.cute.core has no attribute ThrMma` |
+
+Those failures are interdependent, not engine-essential: the module-not-found
+error is raised by an overlay `scheduler.py` that is itself one of the mounts.
+Removing **all three groups together**, keeping only `kernel_warmup.py`, the
+two `quack/` files and `tvm-ffi`, serves and passes the full battery — **8
+mounts instead of 51**, and all three patches are available from the SparkRing
+repository rather than only from a running deployment.
+
+## Operational gates
+
+| Gate | Condition | Result |
+|---|---|---|
+| Boot scripts | containers stopped, rank-0 boot script run by hand | exit 0, stack restored, full battery passed |
+| Boot idempotence | boot script re-run against a live stack | exit 0 in under a second; running containers untouched |
+| Cache server lost mid-flight | rank-1 cache server killed, then a request whose prefix was stored | correct answers (3/3 facts) by recomputation in 71.3 s — degrades to slow, never to wrong |
+| Long idle | 13 minutes idle after a store, then replay | zero reap events on either rank; replay restored in 1.57 s |
+
 ## Not yet measured
 
-Concurrency curves, prefill throughput, long-context cells at 64K-131K,
-TTFT with and without cache replay, depth 3 vs 5 vs 7 sweep.
+Cold-prefill throughput, long-context cells beyond 32K, time-to-first-token
+with and without cache replay, and the effect of the runtime's built-in
+speculation confidence scheduler.

@@ -23,8 +23,8 @@
     "source": "FujitsuPolycom/sparkring runtime recipe (runtime/exl3-r7, pins.json is the component identity)",
     "local_tag": "sparkring/glm52-exl3-r7-3.5bpw:r34-sm121a-flat2-20260810",
     "digest": "sha256:02881d5229d4f4d1cbba0cf40537492a2a505b9d4e43bbfe9a0b2a7bd0584513",
-    "overlays": "47 bind mounts over the image (leg3pair.binds); contents from the SparkRing project's runtime trees, captured from a live SparkRing deployment",
-    "note": "The runtime is not built by this profile; it is the SparkRing project's image plus overlay set, launched with the deltas recorded here."
+    "overlays": "8 bind mounts: three patch files (kernel_warmup.py from the SparkRing hotfix runtime/hotfixes/deployed-r34-20260810, quack/copy_utils.py and quack/layout_utils.py for the quack/cutlass version skew, and the tvm-ffi directory) plus model, cache, HuggingFace-cache and transport-library mounts. leg3pair.binds ships the reference pair's full 51-mount capture; the other 43 are inert at TP2 and were verified removable.",
+    "note": "The runtime is not built by this profile; it is the SparkRing project's image plus three patch files, all obtainable from that repository, launched with the deltas recorded here."
   },
   "runtime": {
     "engine": "vLLM inside the image at /opt/venv (SparkRing pins: local-inference-lab/vllm + integration patch)",
@@ -33,12 +33,13 @@
     "speculative_config": {
       "method": "dspark",
       "num_speculative_tokens": 5,
-      "moe_backend": "b12x"
+      "moe_backend": "b12x",
+      "note": "depth 5 is the checkpoint's dspark_block_size and the engine's minimum; depth 7 serves but measures 14% slower"
     },
     "kv_cache_dtype": "fp8",
     "block_size": 256,
     "max_model_len": 131072,
-    "max_num_seqs": 8,
+    "max_num_seqs": 32,
     "kv_cache_memory_bytes": 10737418240,
     "gpu_memory_utilization": 0.7,
     "kernel_config": {
@@ -58,11 +59,17 @@
     "engine_env_requirement": "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:False when the tier is enabled"
   },
   "benchmarks": {
-    "single_stream_decode_tok_s": 40,
+    "single_stream_decode_tok_s": 36.2,
     "single_stream_decode_no_spec_tok_s": 28.3,
     "mean_acceptance_length": 2.8,
     "draft_acceptance_rate": 0.36,
     "replay_restore_18688_tokens_seconds": 0.051,
-    "note": "Concurrency, prefill, long-context, and depth-sweep measurements pending; see RESULTS.md for conditions."
+    "note": "Client-observed unless stated; conditions in RESULTS.md. Cold prefill and TTFT unmeasured.",
+    "single_stream_decode_engine_peak_tok_s": 40,
+    "single_stream_decode_depth7_tok_s": 31.3,
+    "aggregate_tok_s_8_streams": 120.5,
+    "aggregate_tok_s_16_streams": 160.3,
+    "kv_occupancy_at_16_streams": 0.058,
+    "kv_pool_tokens_at_10gib": 581194
   }
 }
