@@ -127,6 +127,7 @@ GPU-only-KV, 1M-context DeepSeek V4 Flash DSpark configuration.
 |---|---|---:|---:|---:|---:|---|---|---|
 | [DeepSeek V4 Flash DSpark NVFP4 Stage C, 2x Spark](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | 1,515,055 | 8,192 | 8 | TP2 / MTP3 (dspark) | none | GPU-only-KV, 1M-context two-node DeepSeek profile |
 | [DeepSeek V4 Flash DSpark NVFP4 CPU Offload Candidate](profiles/deepseek-v4-flash-dspark-nvfp4-cpu-offload-candidate-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | not yet measured | 8,192 | 8 | TP2 / MTP3 (dspark) | SimpleCPUOffloadConnector: 2 GiB/rank CPU RAM, no NVMe | Research-only, unmeasured: CPU RAM KV offload candidate (no results yet) |
+| [DeepSeek V4 Flash 0731, SparkRing runtime, 2x Spark](profiles/deepseek-v4-flash-0731-sparkring-runtime-2x-spark/) | DeepSeek-V4-Flash-0731 FP8 · `fp8`, block 256 | 131,072 | 10 GiB/rank budget | — | 8 | TP2 / DSpark depth 5 | LMCache MP: 8 GiB lazy L1 + 200 GiB NVMe L2, chunk 256, restart-surviving | Qualified: the SparkRing 4x ring's runtime on a two-node pair — speculation serving correctly (~40 tok/s single-stream) plus a persistent KV tier (cold-restart replay gated) |
 
 #### Qwen3.8-27B
 
