@@ -132,5 +132,5 @@ reported a 500,224-token logical KV pool. The public request ceiling remained
 - The serving matrix predates the v47 SparkCache overlay; it is a same-core
   RC1 serving baseline, not a cache-enabled throughput claim.
 - The public v48-next SparkCache source was not deployed for these measurements.
-- The exact reference vLLM overlay is not currently public, so these results are
+- The exact reference vLLM overlay is not public, so these results are
   a measured configuration record rather than a clean-room reproduction claim.

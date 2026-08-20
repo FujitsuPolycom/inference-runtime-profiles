@@ -74,42 +74,23 @@ therefore a SparkRing task, not something this profile describes.
   captured from a live SparkRing deployment, and the rest are inert here
   because the custom four-node transport that imports them is disabled at TP2.
   **Do not launch with the 51-line list as shipped:** 44 of its sources are
-  paths that exist only on that pair. Filter it first:
+  paths that exist only on that pair. Step 6 of the procedure below filters it.
 
-  ```bash
-  grep -E 'kernel_warmup|/quack/|tvm-ffi|:/models/|:/cache$|HF_CACHE_DIR' \
-      leg3pair.binds > minimal.binds
-  ```
-
-  The eighth mount a previous capture carried,
+  One further mount in that file,
   `libspark_transport_capi.so` over `/opt/sparkring/spark_transport/`, is not
-  in that filter. On the reference pair the library is present in the
+  in the filtered set. On the reference pair the library is present in the
   container and mapped by none of its eight processes, while `libnccl`
   appears in 42 mappings across the same processes: at TP2 the collectives go
   through NCCL and the transport library is never loaded. Omitting it also
   removes a build artifact that is not obtainable from a public repository.
-- The checkpoint at
-  `${HOST_WORK_DIR}/model/DeepSeek-V4-Flash-0731` on both nodes
-  (`huggingface-cli download deepseek-ai/DeepSeek-V4-Flash-0731 --revision
-  913f0657a874...` — 156 GB, 48 shards).
-- For the cache tier: the LMCache wheel described below.
+- The checkpoint on both nodes: 156 GB across 48 shards, revision
+  `913f0657a874`, fetched in step 3.
+- The LMCache wheel on both nodes, built in step 5 from the branch and the
+  patch named there. The cache tier does not start without it.
 
-## What this profile does not supply
-
-The bundle records a configuration; it is not a complete build. Four inputs
-have to be produced before a first launch, and none of them ships here or in
-`FujitsuPolycom/sparkring`:
-
-| Input | State | What it takes |
-|---|---|---|
-| `quack/copy_utils.py`, `quack/layout_utils.py` | annotation-fixed copies of the image's own files | The public repository pins the stock `quack_kernels` 0.5.0 wheel in `runtime/exl3-r7/requirements-quack.txt` but does not carry the fixed files. Reproduce the fix against the symptom: `module cutlass.cute.core has no attribute ThrMma`. |
-| `tvm-ffi` directory mounted at `/opt/sparkring-r7-tvm-ffi` | unpacked wheel | `runtime/exl3-r7/requirements-tvm-ffi.txt` pins `apache_tvm_ffi` 0.1.10 for aarch64; unpack that wheel to a directory and mount it. |
-| LMCache wheel at `${HOST_WORK_DIR}/wheels-t212/` | built locally | Build instructions are below. The heartbeat dead-guard fix they refer to is described but not published as a patch file; the defect is a `{} is not None` guard on a dict, at `vllm_multi_process_adapter.py:730,733`. |
-| Correctness gates in [RESULTS.md](RESULTS.md) | not shipped | The planted-fact probe, the 34-tool corruption request and the acceptance battery are operator-side scripts held outside this repository. Reproducing the gates means writing equivalents from their descriptions. |
-
-Everything else — image, launcher, environment, mounts, boot scripts — is
-here. A first launch is reachable without the gate scripts; verifying the
-result the way the reference pair did is not.
+The launcher assumes the interface names a DGX Spark presents: `enp1s0f0np0`
+for the socket interfaces and `rocep1s0f0` for the RDMA device. Step 1 confirms
+them and names what to edit when a pair differs.
 
 ## Private deployment variables
 
@@ -142,56 +123,162 @@ the deployment's own.
 to adapt it to a host filesystem. Ports, interface names, image identity,
 model identity, and tuning values remain literal in the profile.
 
-## The LMCache wheel
+## Bringing it up
 
-The image ships lmcache `0.5.2+glm52dcp4.1`, an older cut of the fork lineage
-that predates the hybrid cache-group transfer support this model's restore
-correctness depends on. Build the qualified branch against the **image's**
-torch (2.12) and the wheel is installed over it at container start:
+Run every step on **both** nodes unless a step says otherwise. `$WORK` below is
+the directory you will set as `HOST_WORK_DIR`; `$IMG` is the registry
+reference from the top of this document.
+
+```bash
+WORK=/srv/dsv4                                   # your choice; both nodes alike
+IMG=ghcr.io/fujitsupolycom/gb10-vllm-serving:r34-20260810
+mkdir -p "$WORK"/{model,wheels-t212,lmcache-l2-dsv4-0731-spec-b256} /var/tmp/leg3-cache
+```
+
+### 1. Confirm the hardware names the launcher assumes
+
+```bash
+ip link | grep -E 'enp1s0f0np0|enp1s0f1np1'      # socket interfaces
+ibv_devices | grep rocep1s0f0                     # RDMA device
+```
+
+Both must appear. If this pair names them differently, edit the
+`NCCL_SOCKET_IFNAME`, `GLOO_SOCKET_IFNAME`, `TP_SOCKET_IFNAME` and
+`NCCL_IB_HCA` values in [leg3pair-launch.sh](leg3pair-launch.sh) to match, and
+`OMPI_MCA_btl_tcp_if_include` and `MN_IF_NAME` in
+[leg3pair.env](leg3pair.env).
+
+### 2. Pull the runtime image
+
+```bash
+docker pull "$IMG"
+```
+
+### 3. Download the checkpoint
+
+156 GB across 48 shards, pinned to the revision this profile was measured on:
+
+```bash
+huggingface-cli download deepseek-ai/DeepSeek-V4-Flash-0731 \
+    --revision 913f0657a874 --local-dir "$WORK/model/DeepSeek-V4-Flash-0731"
+```
+
+### 4. Build the three patched files the image needs
+
+Extract the originals from the image, then apply the patches in
+[patches/](patches/). The target filenames are the ones the bind list names, so
+keep them exactly.
+
+```bash
+docker run --rm --entrypoint /bin/bash -v /var/tmp:/out "$IMG" -c '
+  P=/opt/venv/lib/python3.12/site-packages
+  cp $P/vllm/model_executor/warmup/kernel_warmup.py /out/kernel_warmup.py
+  cp $P/quack/copy_utils.py   /out/sparkring-r7-quack-copy_utils-annotations.py
+  cp $P/quack/layout_utils.py /out/sparkring-r7-quack-layout_utils-annotations.py'
+
+patch /var/tmp/sparkring-r7-quack-copy_utils-annotations.py \
+      < patches/quack-copy_utils-thrcopy-annotation.patch
+patch /var/tmp/sparkring-r7-quack-layout_utils-annotations.py \
+      < patches/quack-layout_utils-thrmma-annotation.patch
+```
+
+`kernel_warmup.py` takes its patch from `FujitsuPolycom/sparkring`, which is
+not part of this bundle:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/FujitsuPolycom/sparkring/main/runtime/patches/00-reference-vllm/model_executor__warmup__kernel_warmup.py.patch \
+  | patch /var/tmp/kernel_warmup.py
+```
+
+Unpack the pinned `tvm-ffi` wheel into the directory the bind list mounts onto
+`PYTHONPATH`:
+
+```bash
+pip download apache-tvm-ffi==0.1.10 --no-deps --python-version 3.12 \
+    --only-binary=:all: --platform manylinux_2_28_aarch64 -d /tmp/tvmffi
+unzip -q /tmp/tvmffi/apache_tvm_ffi-0.1.10-*.whl \
+    -d /var/tmp/sparkring-r7-tvm-ffi-0.1.10-r1
+```
+
+### 5. Build the LMCache wheel
+
+The image ships lmcache `0.5.2+glm52dcp4.1`, which predates the hybrid
+cache-group transfer support this model's restore correctness depends on.
+Build the qualified branch against the **image's** torch 2.12, with the
+heartbeat guard fix from [patches/](patches/) applied first:
 
 ```bash
 git clone --branch release/v0.5.2-glm52-dcp-base --single-branch \
-    https://github.com/local-inference-lab/LMCache
-# verify: git rev-parse HEAD^{tree}  == e045d729bc5c... (the r18-qualified tree)
-# apply the heartbeat dead-guard patch (the `{} is not None` guard at
-# vllm_multi_process_adapter.py:730,733 makes the servers reap a healthy
-# engine after ~150 s idle without it)
-docker run --rm --entrypoint /bin/bash -v $PWD:/src -v $HOME/wheels:/out \
-  -e TORCH_CUDA_ARCH_LIST=12.1 <sparkring-image> \
+    https://github.com/local-inference-lab/LMCache /tmp/lmcache
+cd /tmp/lmcache
+git rev-parse HEAD^{tree}          # expect e045d729bc5c...
+patch -p1 < "$OLDPWD"/patches/lmcache-mp-heartbeat-guard.patch
+docker run --rm --entrypoint /bin/bash -v /tmp/lmcache:/src -v "$WORK/wheels-t212":/out \
+  -e TORCH_CUDA_ARCH_LIST=12.1 "$IMG" \
   -c 'cd /src && /opt/venv/bin/pip wheel . --no-deps --no-build-isolation -w /out'
 ```
 
-Place the wheel in `${HOST_WORK_DIR}/wheels-t212/` on both nodes.
+### 6. Stage the bundle and its private values
 
-## Deploy
+```bash
+cp leg3pair-launch.sh leg3pair.env profile.env.example "$WORK"/
+cp leg3pair-inner.sh /var/tmp/leg3pair-inner.sh
+grep -E 'kernel_warmup|/quack/|tvm-ffi|:/models/|:/cache$|HF_CACHE_DIR' \
+    leg3pair.binds > "$WORK"/leg3pair.binds
+mv "$WORK"/profile.env.example "$WORK"/.env      # then edit every REPLACE_WITH_ value
+```
 
-1. Copy `profile.env.example` to a private `.env` and replace every
-   placeholder. Stage `.env`, [leg3pair-launch.sh](leg3pair-launch.sh),
-   [leg3pair.env](leg3pair.env) and the filtered bind list from the minimal
-   set above together in `${HOST_WORK_DIR}` on both nodes, naming the filtered
-   file `leg3pair.binds` there. Stage
-   [leg3pair-inner.sh](leg3pair-inner.sh) at `/var/tmp/leg3pair-inner.sh`.
-   Every source path a bind line names must exist before launch: Docker
-   creates a directory in place of a missing bind source, which turns a
-   missing patch file into a silently wrong mount rather than an error.
-2. Launch rank 1 first, then rank 0 (each on its own host):
-   `RANK=1 bash leg3pair-launch.sh` / `RANK=0 bash leg3pair-launch.sh`.
-   `LMCACHE=0` launches without the cache tier. First launch pays a long
-   JIT/AOT compile (the `/var/tmp/leg3-cache` mount persists it; later
-   launches are much faster).
-3. Verify: `curl localhost:8000/v1/models` on rank 0; the cache server log at
-   `<L2 dir>/server.log` shows `Registered KV cache ... with 170 layers`.
-4. Optional boot persistence: place
-   [boot-dsv4-aa42.sh](boot-dsv4-aa42.sh) (rank 0) or
-   [boot-dsv4-931e.sh](boot-dsv4-931e.sh) (rank 1) beside that node's private
-   `.env`, then install it as an `@reboot` user crontab entry. Both scripts
-   launch only when the container is absent, so the two boot paths cannot tear
-   down a live follower.
-5. Validate before trusting: run the gates in [RESULTS.md](RESULTS.md) —
-   at minimum the cold-restart replay with planted-fact probes and the
-   >10-minute-idle heartbeat check. Byte-identity is only meaningful under
-   identical single-request greedy conditions; the behavioral gates use
-   answer correctness.
+`$WORK/leg3pair.binds` must list exactly seven mounts. Every source path it names
+must exist before launch: Docker creates a directory in place of a missing bind
+source, so a missing patch file becomes a silently wrong mount rather than an
+error.
+
+### 7. Launch, rank 1 first
+
+The launcher replaces its own container, so no teardown step is needed.
+
+```bash
+# on rank 1
+RANK=1 bash "$WORK"/leg3pair-launch.sh
+# on rank 0
+RANK=0 bash "$WORK"/leg3pair-launch.sh
+```
+
+`LMCACHE=0` launches without the cache tier. A first launch pays a long JIT and
+AOT compile; the `/var/tmp/leg3-cache` mount persists it, and later launches
+reach a serving endpoint in roughly seven minutes, about four of which is
+checkpoint load.
+
+### 8. Confirm it serves
+
+```bash
+curl -s http://127.0.0.1:8000/v1/models                       # rank 0
+grep 'Registered KV cache' "$WORK"/lmcache-l2-dsv4-0731-spec-b256/server.log
+```
+
+The cache server log must report `Registered KV cache ... with 170 layers`. A
+lower count means the speculative caches did not register and restore
+correctness does not hold.
+
+### 9. Run the correctness gates
+
+```bash
+python3 gates/replay-gate.py store  --tokens 24000
+python3 gates/tool-array-probe.py
+```
+
+Both must exit 0. To exercise restore across a restart, run
+`gates/replay-gate.py store`, replace both containers, then
+`gates/replay-gate.py replay` and compare the reported elapsed time and
+completion hash. [RESULTS.md](RESULTS.md) records what these gates returned on
+the reference pair.
+
+### 10. Optional: bring the pair up at boot
+
+Place [boot-dsv4-aa42.sh](boot-dsv4-aa42.sh) on rank 0 or
+[boot-dsv4-931e.sh](boot-dsv4-931e.sh) on rank 1 beside that node's `.env`, and
+install it as an `@reboot` user crontab entry. Each script launches only when
+its container is absent, so neither boot path can tear down a live follower.
 
 ### What the environment file does not carry
 

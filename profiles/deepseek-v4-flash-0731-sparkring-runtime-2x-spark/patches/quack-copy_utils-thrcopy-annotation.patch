@@ -1,0 +1,20 @@
+--- a/quack/copy_utils.py
++++ b/quack/copy_utils.py
+@@ -330,7 +330,7 @@
+ 
+ 
+ def partition_D_position_independent(
+-    thr_copy: cute.core.ThrCopy, tensor: cute.Tensor
++    thr_copy: cute.ThrCopy, tensor: cute.Tensor
+ ) -> cute.Tensor:
+     return cute.make_tensor(
+         swizzle_ptr(thr_copy.partition_D(tensor).iterator),
+@@ -339,7 +339,7 @@
+ 
+ 
+ def partition_S_position_independent(
+-    thr_copy: cute.core.ThrCopy, tensor: cute.Tensor
++    thr_copy: cute.ThrCopy, tensor: cute.Tensor
+ ) -> cute.Tensor:
+     return cute.make_tensor(
+         swizzle_ptr(thr_copy.partition_S(tensor).iterator),

@@ -1,195 +1,137 @@
 # Reproducible Runtime Profiles
 
-Small, shareable bundles for GPU inference deployments. A profile records the
-image digest, launch arguments, environment, mounts, source revisions, hardware
-summary, and benchmark references without copying model weights or private
-machine details.
+A profile is a small bundle that records how one model was served on one class
+of hardware: image reference and digest, launch arguments, environment, mounts,
+source revisions, a hardware summary, and the measurements taken. It carries no
+model weights and no private machine details.
 
-Prose in this repository follows the writing standard in [AGENTS.md](AGENTS.md):
-a profile is a present-state specification readable without the history that
-produced it, and a status label states what was measured.
+Each profile stands alone. Its own `README.md` is the instruction set; this page
+only helps choose one.
 
-## Privacy rules
-
-Never commit raw `docker inspect`, shell history, logs, `.env` files, SSH
-configuration, tokens, model-cache paths, or benchmark prompts. Use the capture
-script, which replaces usernames, hostnames, IP addresses, home directories,
-mount paths, container IDs, and secret-looking values with placeholders.
-
-Review every generated `manifest.json` before publishing. The redactor is a
-guardrail, not a guarantee.
-
-## Important Hardware / Software Settings
-
-### NVIDIA PCIe P2P driver configuration
-
-The four-GPU RTX PRO 6000 Blackwell profiles depend on direct PCIe peer access.
-The setup scripts and `llm-inference-bench` both detect the recommended
-NVIDIA registry settings. Measured on the RTX workstation reference rig ([HARDWARE.md](HARDWARE.md)): the
-model started without them, but C1 decode fell from **103.4 to 60.8 tok/s at
-8K** and from **95.8 to 59.2 tok/s at 64K** (the controlled A/B is recorded in
-[HARDWARE.md](HARDWARE.md)).
-
-Create `/etc/modprobe.d/nvidia-p2p-override.conf`:
-
-```text
-options nvidia NVreg_RegistryDwords="ForceP2P=0x11;RMForceP2PType=1;RMPcieP2PType=2;GrdmaPciTopoCheckOverride=1;EnableResizableBar=1"
-```
-
-Apply the configuration:
+## Quickstart
 
 ```bash
-update-initramfs -u
-reboot
+git clone https://github.com/FujitsuPolycom/inference-runtime-profiles
+cd inference-runtime-profiles/profiles/<profile-name>
 ```
 
-Verify it after reboot:
+Then follow that profile's `README.md`. Every profile follows the same shape:
+
+1. Copy `profile.env.example` to a private `.env` and fill in local paths,
+   addresses and device names. Never commit it.
+2. Obtain the image and the checkpoint the profile names, by digest.
+3. Launch — some profiles ship `compose.yml`, others ship launcher scripts for
+   multi-node deployments.
+4. Run the profile's gates before trusting it. `RESULTS.md` records what those
+   gates returned on the reference hardware.
+
+Check a bundle before publishing or after editing:
 
 ```bash
-grep -E 'EnableResizableBar|RegistryDwords' /proc/driver/nvidia/params
+./tools/validate-bundle.sh profiles/<profile-name>     # needs ripgrep
+python tools/check-private.py profiles/<profile-name>  # same patterns, no dependencies
 ```
 
-Expected values include `EnableResizableBar: 1` and all four registry entries
-above. `nvidia-smi` may show PCIe Gen1 while idle; verify Gen5 x16 under load.
+## Profiles
 
-These values are specific to the tested NVIDIA PCIe workstation topology. Keep
-console access available, verify peer connectivity after reboot, and do not
-blindly apply them to unrelated hardware or driver versions. See
-[HARDWARE.md](HARDWARE.md) and the
-[GLM-5.2 v20 + Grouped LMCache, FP8 RoPE profile](profiles/glm52-v20-lmcache-fp8rope/)
-(`glm52-v20-lmcache-fp8rope`) for
-the reference configuration and measured comparison.
+Status labels follow [AGENTS.md](AGENTS.md): `qualified` means the repository
+records conditions, measurement and result; `implemented` means it runs and
+nothing measured it; `research-only` means it is not for deployment.
 
-## Benchmarking
+### 2x NVIDIA DGX Spark
 
-See [BENCHMARKING.md](BENCHMARKING.md) for PowerShell-ready quick, practical,
-full-standard, and cold-prefill benchmark commands using
-`local-inference-lab/llm-inference-bench`.
+| Profile | Model | Parallelism | Cache tier | Status |
+|---|---|---|---|---|
+| [DeepSeek-V4-Flash-0731, SparkRing runtime](profiles/deepseek-v4-flash-0731-sparkring-runtime-2x-spark/) | DeepSeek-V4-Flash-0731 FP8, 131,072 ctx | TP2, DSpark depth 5 | LMCache 4 GiB L1 + 200 GiB NVMe L2 | qualified |
+| [DeepSeek V4 Flash DSpark NVFP4, GPU-only KV](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4, 1,048,576 ctx | TP2, MTP3 | none | see profile |
+| [DeepSeek V4 Flash DSpark NVFP4, CPU KV offload](profiles/deepseek-v4-flash-dspark-nvfp4-cpu-offload-candidate-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4, 1,048,576 ctx | TP2, MTP3 | 2 GiB/rank CPU RAM | research-only |
+| [Qwen3.8-27B EXL3 K5/K6 + LMCache](profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/) | Qwen3.8-27B EXL3, 262,144 ctx | TP2, MTP3 | LMCache 4 GB L1 + 200 GB NVMe L2 | qualified |
 
-For the four-GPU RTX workstation reference rig ([HARDWARE.md](HARDWARE.md)), run `tools/check-pcie-p2p.sh` as root
-before deployment. It checks the NVIDIA registry override, runtime driver
-parameters, GPU topology, and CUDA peer-access visibility.
+The Qwen3.8-27B bundle also serves a single Spark at `TP=1`; its README covers
+what changes.
 
-## Layout
+### 4x NVIDIA DGX Spark
+
+| Profile | Model | Parallelism | Cache tier | Status |
+|---|---|---|---|---|
+| [GLM-5.2 EXL3 3.5 bpw fixed-MTP4](profiles/glm52-exl3-r7-3.5bpw-mtp4-4x-spark/) | GLM-5.2 EXL3/Trellis 3.5 bpw, 262,144 ctx | TP4 / DCP4 / MTP4 | native prefix caching | qualified |
+| [GLM-5.2 SparkRing + SparkCache](profiles/glm52-sparkring-sparkcache-4x-spark/) | GLM-5.2 MXFP4-Experts GPTQ, 458,752 ctx | TP4 / DCP4 / MTP4 | SparkCache NVMe snapshots | qualified |
+
+### 4x RTX PRO 6000 Blackwell workstation
+
+| Profile | Model | Parallelism | Cache tier | Status |
+|---|---|---|---|---|
+| [GLM-5.2 v20 + grouped LMCache, FP8 RoPE](profiles/glm52-v20-lmcache-fp8rope/) | GLM-5.2 v20 | TP4 / DCP4 / MTP3 | LMCache, grouped | implemented |
+| [GLM-5.2 v20 r13 EXL3 3.0 bpw](profiles/glm52-v20-r13-exl3-3bpw-750k/) | GLM-5.2 EXL3 3.0 bpw, 750K ceiling | TP4 | see profile | see profile |
+| [GLM-5.2 v20 r7 EXL3 3.0 bpw](profiles/glm52-v20-r7-exl3-3bpw/) | GLM-5.2 EXL3 3.0 bpw | TP4 | see profile | implemented |
+
+These rigs need a PCIe peer-access override; without it decode falls by roughly
+40% at 8K context. [HARDWARE.md](HARDWARE.md) carries the setting and the
+controlled comparison, and `tools/check-pcie-p2p.sh` verifies it.
+
+### 1x GPU
+
+| Profile | Model | Parallelism | Cache tier | Status |
+|---|---|---|---|---|
+| [Qwen3.6-27B NVFP4 MTP3 + LMCache, RTX 5090](profiles/qwen36-27b-nvfp4-mtp3-lmcache-rtx5090/) | Qwen3.6-27B NVFP4, 131,072 ctx | TP1 / MTP3 | LMCache 256 GB RAM L1 + 180 GB Optane L2 | see profile |
+
+## Measured throughput
+
+Single-stream decode at concurrency 1 unless stated. Conditions for every
+figure are in the profile's own `RESULTS.md`; these rows are an index, not a
+comparison — the profiles differ in model, quantisation, context and hardware.
+
+| Profile | Decode | Prefill | Notes |
+|---|---:|---:|---|
+| [DeepSeek-V4-Flash-0731, 2x Spark](profiles/deepseek-v4-flash-0731-sparkring-runtime-2x-spark/RESULTS.md) | 43.4 tok/s | 1,623 tok/s at 64K | 59.9 tok/s median on coding output; 160.3 tok/s aggregate at 16 streams |
+| [Qwen3.8-27B EXL3, 2x Spark](profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/RESULTS.md) | 27.0 tok/s | 1,375 tok/s cold | 275 tok/s aggregate at 64 streams |
+| [GLM-5.2 EXL3 3.5 bpw, 4x Spark](profiles/glm52-exl3-r7-3.5bpw-mtp4-4x-spark/RESULTS.md) | 27.3 tok/s | — | median on coding output at peak |
+
+Profiles without a row have no throughput measurement recorded.
+
+## What a bundle contains
 
 ```text
 profiles/<profile-name>/
-  profile.env.example       # non-secret knobs only
-  compose.yml               # portable compose template
-  manifest.json             # sanitized, immutable run metadata
-  RESULTS.md                # optional summarized measurements
-  README.md                 # profile-specific notes
+  README.md               # what it is, requirements, step-by-step
+  manifest.json           # sanitized run metadata: image, runtime, benchmarks
+  profile.env.example     # every site-specific value, as placeholders
+  compose.yml             # or launcher scripts, for multi-node profiles
+  RESULTS.md              # measurements with their conditions
+  gates/                  # reproducible correctness probes, where a profile has them
+  patches/                # patches the runtime needs, where a profile needs them
 ```
 
-## Profiles by GPU count
+## Privacy rules
 
-### 4x RTX workstation profiles
+Never commit raw `docker inspect` output, shell history, logs, `.env` files,
+SSH configuration, tokens, model-cache paths, or benchmark prompts. Use the
+capture script, which replaces usernames, hostnames, IP addresses, home
+directories, mount paths, container IDs and secret-looking values with
+placeholders.
 
-Target a single-node workstation with **4x NVIDIA RTX PRO 6000 Blackwell 96 GiB GPUs**, an **AMD Threadripper PRO 9965WX**, **128 GiB system RAM 6400 (8x16GB)**, PCIe Gen5 x16-class GPU slots, and an NVMe-backed model/cache filesystem. Typical GLM testing uses **TP4/DCP4/MTP3**. The GLM-5.2 v20 + Grouped LMCache, FP8 RoPE profile below (`glm52-v20-lmcache-fp8rope`) is the maintained four-GPU workstation LMCache deployment. See [HARDWARE.md](HARDWARE.md) for startup timings and comparable benchmark data.
+Review every generated `manifest.json` before publishing, and run one of the
+two bundle checks above. The redactor is a guardrail, not a guarantee. Both
+checks skip Markdown, so read the prose too: a bundle passes while its README
+still states a private address or home directory.
 
-#### GLM-5.2
+## Capturing a profile
 
-| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
-|---|---|---:|---:|---:|---:|---|---|---|
-| [**v20 R13 EXL3 3.0 bpw, 750k ceiling**](profiles/glm52-v20-r13-exl3-3bpw-750k/) | GLM-5.2 EXL3 3.0 bpw · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 750,000 | 831,911 | 3,072 | 8 | TP4 / DCP4 / MTP3 | none (GPU-only KV, deliberately) | Long-context profile; manual DCP/Trellis overrides recorded |
-| [**v20 R7 EXL3 3.0 bpw**](profiles/glm52-v20-r7-exl3-3bpw/) | GLM-5.2 EXL3 3.0 bpw · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 262,144 | 813,568 | 3,072 | 8 | TP4 / DCP4 / MTP3 | none (GPU-only KV, deliberately) | Validated GPU-only lane, largest KV pool |
-| [v20 + Grouped LMCache, FP8 RoPE](profiles/glm52-v20-lmcache-fp8rope/) | GLM-5.2 NVFP4 + NF3 hybrid · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 400,384 | 433,152 | 3,072 | 8 | TP4 / DCP4 / MTP3 | LMCache 48 GiB RAM L1 + 96 GiB NVMe L2, chunk 512 | Maintained four-GPU workstation LMCache deployment, longest context |
-
-### 4x DGX Spark profiles
-
-These profiles target multi-node GB10 clusters rather than a single PCIe
-workstation. SparkRing is the switchless direct-cable RoCE ring serving fabric
-these clusters use; SparkCache is its DCP-sharded NVMe context-snapshot cache.
-Fabric topology, management-plane isolation, and per-rank attestation are part
-of the configuration.
-
-#### GLM-5.2
-
-| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
-|---|---|---:|---:|---:|---:|---|---|---|
-| [GLM-5.2 EXL3 3.5 bpw fixed-MTP4, 4x Spark](profiles/glm52-exl3-r7-3.5bpw-mtp4-4x-spark/) | GLM-5.2 EXL3/Trellis 3.5 bpw + online K6 · `nvfp4_ds_mla`, FP8 RoPE, 368 B | 262,144 | 1,156,864 | 4,096 | 8 | TP4 / DCP4 / MTP4 (fixed) | native prefix caching only; an LMCache NVMe tier is research-only (replay evidence with conditions in the profile's RESULTS.md) | sparkring operator default; SIRCL switchless transport |
-| [GLM-5.2 SparkRing + SparkCache, 4x Spark](profiles/glm52-sparkring-sparkcache-4x-spark/) | GLM-5.2 MXFP4-Experts GPTQ · `nvfp4_ds_mla` | 458,752 | 500,224 | 4,096 | 8 | TP4 / DCP4 / MTP4 | SparkCache (not LMCache): DCP4-sharded NVMe context snapshots, 256 MiB arena | Switchless direct-cable serving with persistent context snapshots |
-
-### 2x DGX Spark profiles
-
-These are separate from the 4x RTX workstation profiles and target two DGX
-Spark systems. They should not be treated as interchangeable launch recipes.
-
-#### DeepSeek V4 Flash
-
-DSpark is the speculative-decoding proposer these profiles run (MTP-style
-probabilistic draft sampling); `(dspark)` in the parallelism column marks its
-MTP implementation. "Stage C" in the first profile's slug and served-model
-name is a retained registry label, not a lifecycle stage: the profile is the
-GPU-only-KV, 1M-context DeepSeek V4 Flash DSpark configuration.
-
-| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
-|---|---|---:|---:|---:|---:|---|---|---|
-| [DeepSeek V4 Flash DSpark NVFP4 Stage C, 2x Spark](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | 1,515,055 | 8,192 | 8 | TP2 / MTP3 (dspark) | none | GPU-only-KV, 1M-context two-node DeepSeek profile |
-| [DeepSeek V4 Flash DSpark NVFP4 CPU Offload Candidate](profiles/deepseek-v4-flash-dspark-nvfp4-cpu-offload-candidate-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4 · `nvfp4_ds_mla`, block 256 | 1,048,576 | not yet measured | 8,192 | 8 | TP2 / MTP3 (dspark) | SimpleCPUOffloadConnector: 2 GiB/rank CPU RAM, no NVMe | Research-only, unmeasured: CPU RAM KV offload candidate (no results yet) |
-| [DeepSeek V4 Flash 0731, SparkRing runtime, 2x Spark](profiles/deepseek-v4-flash-0731-sparkring-runtime-2x-spark/) | DeepSeek-V4-Flash-0731 FP8 · `fp8`, block 256 | 131,072 | 10 GiB/rank budget | — | 8 | TP2 / DSpark depth 5 | LMCache MP: 8 GiB lazy L1 + 200 GiB NVMe L2, chunk 256, restart-surviving | Qualified: the SparkRing 4x ring's runtime on a two-node pair — speculation serving correctly (~40 tok/s single-stream) plus a persistent KV tier (cold-restart replay gated) |
-
-#### Qwen3.8-27B
-
-| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
-|---|---|---:|---:|---:|---:|---|---|---|
-| [Qwen3.8-27B EXL3 K5/K6 + LMCache, 2x Spark](profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 3,893,434 | 3,072 | 64 | TP2 / MTP3 | LMCache 4 GB L1 + 200 GB NVMe L2, chunk 1600 (≈59K / ≈3.0M tokens) | Near-BF16 EXL3 lane (0.00276 KLD as published by the checkpoint author, measured on an RTX 5090 under a different runtime; not reproduced on GB10), two-rail RoCE striping |
-
-### 1x DGX Spark profile
-
-The Qwen3.8-27B row below is the same bundle as its 2x entry — the profile at
-`profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/` run with `TP=1`; there is no separate 1x
-bundle. One node
-carries all weights and every KV head, so the KV pool shrinks and the LMCache chunk doubles to
-213 MB (an 8 GB L1 stages ~59K replayable tokens at TP1 versus ~118K at TP2). No ray, no
-striping, no second cache server. Measured: decode 23.8 / 43.1 / 85.2 tok/s at 4k context for
-cc1/2/4; prefill 330-667 tok/s from 4k to 32k (greedy `llm-inference-bench` runs, KV pool
-1,669,678 tokens; conditions in that profile's RESULTS.md, "Single node (TP=1)" — note the 2x
-tables were measured at a different `gpu_memory_utilization`, so rows are not directly
-comparable across the two sections).
-
-| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
-|---|---|---:|---:|---:|---:|---|---|---|
-| [Same bundle, TP=1 variant (`qwen38-27b-exl3-k5k6-lmcache-2x-spark`)](profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/) | Qwen3.8-27B EXL3 K5/K6 · `fp8`, block 1600 (GDN) | 262,144 | 1,669,678 | 3,072 | 64 (lowering recommended for the smaller pool) | TP1 / MTP3 | LMCache 8 GB L1 + 200 GB NVMe L2, chunk 1600 (213 MB/chunk at TP1) | Single-Spark deployment of the same near-BF16 EXL3 lane |
-
-### 1x GPU profile
-
-| Profile | Model / quant / KV | Max model len | Max GPU KV | Batch | Seqs | Parallelism | Cache tier | Main use |
-|---|---|---:|---:|---:|---:|---|---|---|
-| [Qwen3.6-27B NVFP4 MTP3 + LMCache, RTX 5090](profiles/qwen36-27b-nvfp4-mtp3-lmcache-rtx5090/) | Qwen3.6-27B NVFP4 · `fp8`, block 1600 (mamba) | 131,072 | 204,039 | 3,199 | 1 | TP1 / MTP3 | LMCache 256 GB pinned-RAM L1 + 180 GB Optane L2, chunk 1600 | Single-GPU Qwen hybrid/Mamba with LMCache |
-
-## Commands
-
-From the deployment host:
+From the deployment host. Capture writes only to `profiles/<name>/` and never
+stops, restarts or modifies the running container.
 
 ```bash
-./tools/capture-profile.sh --container glm52-prod --name daily-v20
-./tools/validate-bundle.sh profiles/daily-v20
+./tools/capture-profile.sh --container <container> --name <profile-name>
+./tools/validate-bundle.sh profiles/<profile-name>
 ```
-
-On Windows PowerShell:
 
 ```powershell
-./tools/capture-profile.ps1 --container glm52-prod --name daily-v20
-./tools/validate-bundle.ps1 -Path profiles/daily-v20
+./tools/capture-profile.ps1 --container <container> --name <profile-name>
+./tools/validate-bundle.ps1 -Path profiles/<profile-name>
 ```
 
-Capture writes only to `profiles/<name>/`. It does not stop, restart, or modify
-the running container.
+## Also here
 
-## Applying a profile
-
-Copy `profile.env.example` to a private `.env`, fill in local paths, and review
-the compose file. Do not commit the private file.
-
-```bash
-docker compose --env-file .env -f profiles/daily-v20/compose.yml config
-docker compose --env-file .env -f profiles/daily-v20/compose.yml up -d
-```
-
-Use immutable image digests, explicit ports, and a separate project name for
-each profile. Record benchmark results in `RESULTS.md`, not raw request data.
-
-These are sanitized templates, not executable claims about a particular host.
-Every local path, image digest, and scale-file location must be filled in via a
-private `.env` before launch.
+- [AGENTS.md](AGENTS.md) — the writing standard this repository's prose follows.
+- [HARDWARE.md](HARDWARE.md) — reference rigs, the PCIe peer-access setting, startup timings.
+- [BENCHMARKING.md](BENCHMARKING.md) — benchmark commands used to produce the figures above.

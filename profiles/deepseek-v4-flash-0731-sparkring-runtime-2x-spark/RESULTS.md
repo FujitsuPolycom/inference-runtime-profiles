@@ -10,7 +10,8 @@ correctness (planted key-value facts at fixed depths in deterministic filler).
 
 | Configuration | Single-stream decode | Conditions |
 |---|---|---|
-| This profile (DSpark depth 5) | **36-40 tok/s** | client-observed 36.2, engine-reported peak 38.6-40; 1 request, 512-2048 token generations |
+| DSpark depth 5, 8 GiB L1 buffer | **36-40 tok/s** | client-observed 36.2, engine-reported peak 38.6-40; 1 request, 512-2048 token generations |
+| DSpark depth 5, shipped 4 GiB L1 buffer | **42.5-43.4 tok/s** | client-observed over two runs, mean acceptance length 2.80 and 2.97; conditions in the 4 GiB section below |
 | Same pair, from-source build, no speculation | 28.3 tok/s | 90 s sustained, client rate = server rate |
 | Speculative depth 7 | 31.3 tok/s | same measurement, otherwise identical configuration |
 
@@ -177,6 +178,16 @@ buffer size, against the 7-8 GB reached with an 8 GiB buffer, where the engine
 core was killed. One gigabyte of margin remains above the abort floor the
 acceptance battery uses, and 65,536 tokens is the longest prompt measured on
 this configuration.
+
+## Reproducing these gates
+
+[gates/](gates/) carries two probes that assert the correctness properties
+recorded above, against any endpoint serving this profile:
+`replay-gate.py` for planted-fact correctness over a long prompt, and
+`tool-array-probe.py` for output integrity under a 34-tool array. Both
+generate their requests from a seed rather than replaying a captured one.
+Measured on the reference pair 2026-08-20: `facts=3/3` in 13.28 s at 24,000
+tokens, and 2,499 characters with no leaked markers from the tool array.
 
 ## Not yet measured
 
