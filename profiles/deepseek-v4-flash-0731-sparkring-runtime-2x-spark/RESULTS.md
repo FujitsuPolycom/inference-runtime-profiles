@@ -152,11 +152,39 @@ repository rather than only from a running deployment.
 | Cache server lost mid-flight | rank-1 cache server killed, then a request whose prefix was stored | correct answers (3/3 facts) by recomputation in 71.3 s — degrades to slow, never to wrong |
 | Long idle | 13 minutes idle after a store, then replay | zero reap events on either rank; replay restored in 1.57 s |
 
+## The 4 GiB L1 buffer, measured
+
+Conditions: both nodes carrying `--l1-size-gb 4`, both containers relaunched,
+endpoint ready 404 s after launch, concurrency 1, 2026-08-20.
+
+| Cell | Result |
+|---|---|
+| 34-tool corruption probe under speculation | 2,125 and 1,743 characters over two runs, no leaked template markers |
+| Planted facts, 24,000-token prompt | 3/3 |
+| Single-stream decode | 43.4 and 42.5 tok/s, mean acceptance length 2.97 and 2.80 |
+| Planted facts, 65,536-token prompt | 3/3 |
+| Available memory at the low point of the 65,536-token prefill | 11 GB per node, against 12.5 GB at idle; free swap held at 11 GB |
+
+The 65,536-token prefill was computed rather than restored: prompt throughput
+held 1,344-1,534 tok/s across it, near the 1,623 tok/s recorded above for a
+cold prefill at that length, and the external prefix cache hit rate read 33.7%
+during it against 97.2% on the 24,000-token prompt in the same run. Those two
+figures bound the staging reach between 24,000 and 65,536 tokens, measuring
+what the per-token footprint arithmetic estimates at 50,000 to 67,000.
+
+A 64K-token prefill therefore costs about 1.5 GB of available memory at this
+buffer size, against the 7-8 GB reached with an 8 GiB buffer, where the engine
+core was killed. One gigabyte of margin remains above the abort floor the
+acceptance battery uses, and 65,536 tokens is the longest prompt measured on
+this configuration.
+
 ## Not yet measured
 
 Time to first token with a cache-tier hit against a cold prefill of the same
-prompt, decode throughput at contexts beyond 32K, and the effect of the
-runtime's built-in speculation confidence scheduler.
+prompt, decode throughput at contexts beyond 32K, the prompt length at which
+the memory floor is crossed, and the effect of the DSpark confidence controls
+(`dspark_confidence_threshold`, `dspark_confidence_temperature`,
+`dspark_budget_frac` in the speculative config).
 
 Every measurement in this document was taken with an 8 GiB LMCache L1 buffer.
 `leg3pair-inner.sh` ships 4 GiB, and nothing here was re-measured at that

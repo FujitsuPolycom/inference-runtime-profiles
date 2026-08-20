@@ -202,10 +202,12 @@ stages 50,000 to 67,000 tokens and an 8 GiB buffer 100,000 to 134,000, against
 a 131,072-token context limit. The engine's own key-value pool costs about
 18.5 KB per token at that limit — a different quantity, measured on the GPU
 side, which does not bound staging. An L1 buffer is host memory on a
-unified-memory node, which is the other side of the trade. Status:
-the gates and benchmarks in [RESULTS.md](RESULTS.md) were measured at 8 GiB;
-the shipped 4 GiB value is implemented and has not yet been exercised by a
-64K-token prefill.
+unified-memory node, which is the other side of the trade. Status: the shipped
+4 GiB value is **qualified** for serving and for long-context prefill
+headroom — a 65,536-token prefill leaves 11 GB available per node against
+12.5 GB at idle, where the same operation at 8 GiB reached the 7-8 GB at which
+the engine core was killed. The gates and benchmarks recorded in
+[RESULTS.md](RESULTS.md) under an 8 GiB buffer are marked there.
 
 Note that a large budget is unnecessary in any case: per-token cost falls as
 the context limit rises (bounded cache groups amortise over more tokens), and
