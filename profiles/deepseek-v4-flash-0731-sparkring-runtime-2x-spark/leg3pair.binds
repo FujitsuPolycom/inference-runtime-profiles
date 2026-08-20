@@ -10,7 +10,7 @@
 /var/tmp/sparkring-adaptive-mtp-runtime-deployment-269be728594b0e6d/runtime/spark_tp4_sparse_q42_q48_contract.py:/opt/spark-vllm/spark_tp4_sparse_q42_q48_contract.py:ro
 /var/tmp/sparkring-adaptive-mtp-policy-deployment-269be728594b0e6d/runtime-build-manifest.json:/opt/sparkring-adaptive-mtp-policy/runtime-build-manifest.json:ro
 /var/tmp/kernel_warmup.py:/opt/venv/lib/python3.12/site-packages/vllm/model_executor/warmup/kernel_warmup.py:ro
-/home/code/work/qwen38-exl3/model/DeepSeek-V4-Flash-0731:/models/deepseek-v4-flash-0731:ro
+${HOST_WORK_DIR}/model/DeepSeek-V4-Flash-0731:/models/deepseek-v4-flash-0731:ro
 /var/tmp/spark_tp4_port_namespace.py:/opt/spark-vllm/spark_tp4_port_namespace.py:ro
 /var/tmp/sparkring-r7-quack-layout_utils-annotations.py:/opt/venv/lib/python3.12/site-packages/quack/layout_utils.py:ro
 /var/tmp/sparkring-adaptive-mtp-runtime-deployment-269be728594b0e6d/runtime/spark_tp4_vocab_allgather_backend.py:/opt/spark-vllm/spark_tp4_vocab_allgather_backend.py:ro
@@ -38,7 +38,7 @@
 /var/tmp/sparkring-adaptive-mtp-runtime-deployment-269be728594b0e6d/runtime/spark_tp4_dcp_backend.py:/opt/spark-vllm/spark_tp4_dcp_backend.py:ro
 /var/tmp/sparkring-adaptive-mtp-runtime-deployment-269be728594b0e6d/runtime/spark_adaptive_mtp_context_control.py:/opt/spark-vllm/spark_adaptive_mtp_context_control.py:ro
 /var/tmp/sparkring-adaptive-mtp-cost-controller-k1-k5-v8/adaptive_mtp_cost_controller_contract.json:/opt/sparkring-adaptive-mtp-cost-controller/adaptive_mtp_cost_controller_contract.json:ro
-/home/code/.cache/huggingface:/root/.cache/huggingface:ro
+${HOST_HF_CACHE_DIR}:${CONTAINER_HF_HOME}:ro
 /var/tmp/sparkring-adaptive-mtp-runtime-deployment-269be728594b0e6d/context/acceptance_length.py:/opt/venv/lib/python3.12/site-packages/vllm/v1/spec_decode/dynamic/acceptance_length.py:ro
 /var/tmp/sparkring-adaptive-mtp-runtime-deployment-269be728594b0e6d/runtime/spark_adaptive_mtp_context_controller.py:/opt/spark-vllm/spark_adaptive_mtp_context_controller.py:ro
 /var/tmp/sparkring-adaptive-mtp-runtime-deployment-269be728594b0e6d/runtime/spark_tp4_allgather_backend.py:/opt/spark-vllm/spark_tp4_allgather_backend.py:ro

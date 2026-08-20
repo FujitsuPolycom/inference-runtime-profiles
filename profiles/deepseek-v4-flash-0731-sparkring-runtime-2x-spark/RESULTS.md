@@ -90,13 +90,14 @@ in any acceptance battery so this failure mode cannot pass unnoticed.
 
 `leg3pair-inner.sh` now ships `--l1-size-gb 4` for that headroom. The cost is
 staging reach: a lookup counts an L2 hit only after the chunk stages into L1,
-and the trim policy truncates at the first staging failure. At the store
-footprint measured below — about 1.2 GB for an 18,688-token prompt with spec
-caches, roughly 64 KB per token per rank — a 4 GiB buffer stages about 65,000
-tokens and an 8 GiB buffer about the whole 131,072-token limit. Prefixes past
-that reach recompute instead of restoring. Every gate in this document sits
-well inside 65,000 tokens except the 77,568-token store noted below, which was
-taken on the from-source stack at 8 GiB.
+and the trim policy truncates at the first staging failure. Two store
+footprints are on record below — about 1.2 GB for the 18,688-token prompt with
+spec caches, and 6.1 GiB per rank for the 77,568-token store without
+speculation, so 64 and 84 KB per token per rank — which puts a 4 GiB buffer at
+50,000 to 67,000 tokens of staging reach and an 8 GiB buffer at 100,000 to
+134,000. Prefixes past that reach recompute instead of restoring. Every gate in
+this document sits inside 50,000 tokens except the 77,568-token store, which
+was taken on the from-source stack at 8 GiB.
 
 ## Output correctness under speculation
 

@@ -64,19 +64,41 @@ on a two-node pair.
       leg3pair.binds > minimal.binds
   ```
 - The checkpoint at
-  `$HOME/work/qwen38-exl3/model/DeepSeek-V4-Flash-0731` on both nodes
+  `${HOST_WORK_DIR}/model/DeepSeek-V4-Flash-0731` on both nodes
   (`huggingface-cli download deepseek-ai/DeepSeek-V4-Flash-0731 --revision
   913f0657a874...` — 156 GB, 48 shards).
 - For the cache tier: the LMCache wheel described below.
 
-## Site constants to edit
+## Private deployment variables
 
-The scripts carry the reference pair's values; adjust for your site:
-fabric IPs `198.18.200.1/.2` (rank 0/1) and fabric interface `enp1s0f0np0`
-in `leg3pair-launch.sh`; LAN IPs `192.168.0.200/.174` in the
-`kv-transfer-config` server URLs; RDMA device `rocep1s0f0` and its GID index
-(`0` = RoCE v1 on the reference pair); model and L2 paths under
-`$HOME/work/qwen38-exl3/`.
+Copy `profile.env.example` to a private `.env` beside
+`leg3pair-launch.sh` on each node and replace every `REPLACE_WITH_*` value.
+The launcher sources `.env` with Bash. It then expands the variable tokens in
+`leg3pair.env` and `leg3pair.binds` one line at a time before passing those
+lines to Docker as `-e` and `-v` arguments. Docker receives concrete values;
+neither template relies on Docker environment-file expansion.
+
+| Variable | Example | Role |
+|---|---|---|
+| `HOST_WORK_DIR` | `/srv/dsv4` | Host directory holding the checkpoint, the LMCache wheel, the launcher and the L2 cache |
+| `HOST_HF_CACHE_DIR` | `/srv/hf-cache` | Host HuggingFace cache, bind source |
+| `CONTAINER_HF_HOME` | `/root/.cache/huggingface` | HuggingFace cache path inside the container |
+| `RANK0_FABRIC_ADDR` | `203.0.113.1` | Rank 0 on the direct link between the nodes; also the TP2 master address |
+| `RANK1_FABRIC_ADDR` | `203.0.113.2` | Rank 1 on the direct link |
+| `RANK0_LAN_ADDR` | `203.0.113.10` | Rank 0's LMCache server address, as the other rank reaches it |
+| `RANK1_LAN_ADDR` | `203.0.113.11` | Rank 1's LMCache server address |
+| `SPARKRING_MASTER_ADDR` | `203.0.113.20` | `MASTER_ADDR` as captured in the SparkRing container environment |
+| `RANK1_SSH_TARGET` | `203.0.113.2` | The address rank 0's boot script uses to reach rank 1 over SSH; the fabric address, where a LAN address may have no host key |
+
+Addresses above are from the documentation range reserved by RFC 5737 and are
+placeholders, not a topology. Two nodes need a direct link between them and a
+route by which each rank's cache server reaches the other; the addressing is
+the deployment's own.
+
+`CONTAINER_HF_HOME` is the only container-internal variable. It should remain
+`/root/.cache/huggingface` for the recorded image layout; operators do not need
+to adapt it to a host filesystem. Ports, interface names, image identity,
+model identity, and tuning values remain literal in the profile.
 
 ## The LMCache wheel
 
@@ -97,17 +119,18 @@ docker run --rm --entrypoint /bin/bash -v $PWD:/src -v $HOME/wheels:/out \
   -c 'cd /src && /opt/venv/bin/pip wheel . --no-deps --no-build-isolation -w /out'
 ```
 
-Place the wheel in `$HOME/work/qwen38-exl3/wheels-t212/` on both nodes.
+Place the wheel in `${HOST_WORK_DIR}/wheels-t212/` on both nodes.
 
 ## Deploy
 
-1. Stage the three patch files, model, wheel, and the two scripts
-   ([leg3pair-launch.sh](leg3pair-launch.sh) →
-   `$HOME/work/qwen38-exl3/`, [leg3pair-inner.sh](leg3pair-inner.sh) →
-   `/var/tmp/`), plus [leg3pair.env](leg3pair.env) and a bind list —
-   either [leg3pair.binds](leg3pair.binds) as shipped or the 8-line minimal
-   filter above — at `/var/tmp/leg3pair.binds` on both nodes. Mount sources
-   must exist at the paths the bind list names.
+1. Copy `profile.env.example` to a private `.env` and replace every
+   placeholder. Stage `.env`, [leg3pair-launch.sh](leg3pair-launch.sh),
+   [leg3pair.env](leg3pair.env), and either
+   [leg3pair.binds](leg3pair.binds) as shipped or the 8-line minimal filter
+   above together in `${HOST_WORK_DIR}` on both nodes. Stage
+   [leg3pair-inner.sh](leg3pair-inner.sh) at
+   `/var/tmp/leg3pair-inner.sh`. Mount sources must exist at the paths the bind
+   list names.
 2. Launch rank 1 first, then rank 0 (each on its own host):
    `RANK=1 bash leg3pair-launch.sh` / `RANK=0 bash leg3pair-launch.sh`.
    `LMCACHE=0` launches without the cache tier. First launch pays a long
@@ -115,11 +138,12 @@ Place the wheel in `$HOME/work/qwen38-exl3/wheels-t212/` on both nodes.
    launches are much faster).
 3. Verify: `curl localhost:8000/v1/models` on rank 0; the cache server log at
    `<L2 dir>/server.log` shows `Registered KV cache ... with 170 layers`.
-4. Optional boot persistence: install
-   [boot-dsv4-aa42.sh](boot-dsv4-aa42.sh) (rank 0) /
-   [boot-dsv4-931e.sh](boot-dsv4-931e.sh) (rank 1) as `@reboot` user crontab
-   entries. Both launch only when the container is absent, so the two boot
-   paths cannot tear down a live follower.
+4. Optional boot persistence: place
+   [boot-dsv4-aa42.sh](boot-dsv4-aa42.sh) (rank 0) or
+   [boot-dsv4-931e.sh](boot-dsv4-931e.sh) (rank 1) beside that node's private
+   `.env`, then install it as an `@reboot` user crontab entry. Both scripts
+   launch only when the container is absent, so the two boot paths cannot tear
+   down a live follower.
 5. Validate before trusting: run the gates in [RESULTS.md](RESULTS.md) —
    at minimum the cold-restart replay with planted-fact probes and the
    >10-minute-idle heartbeat check. Byte-identity is only meaningful under
@@ -170,10 +194,14 @@ gates all use short prompts and never reach this limit.
 `leg3pair-inner.sh` ships `--l1-size-gb 4`. A lookup counts an L2 hit only
 after the chunk stages into L1, and the trim policy truncates at the first
 staging failure, so a prefix longer than L1 holds is recomputed rather than
-restored — slower, never wrong. The store footprint measured at this geometry
-is about 64 KB per token per rank (1.2 GB for an 18,688-token prompt, spec
-caches included), which puts the staging reach of a 4 GiB buffer near 65,000
-tokens and an 8 GiB buffer near the full 131,072-token limit. Buffers are host
+restored — slower, never wrong. What bounds staging is the stored chunk
+footprint per rank, and two stores are on record: 18,688 tokens in about
+1.2 GB with speculative caches, and 77,568 tokens in 6.1 GiB per rank without
+speculation. Those are 64 and 84 KB per token per rank, so a 4 GiB buffer
+stages 50,000 to 67,000 tokens and an 8 GiB buffer 100,000 to 134,000, against
+a 131,072-token context limit. The engine's own key-value pool costs about
+18.5 KB per token at that limit — a different quantity, measured on the GPU
+side, which does not bound staging. Buffers are host
 memory on a unified-memory node, which is the other side of the trade. Status:
 the gates and benchmarks in [RESULTS.md](RESULTS.md) were measured at 8 GiB;
 the shipped 4 GiB value is implemented and has not yet been exercised by a

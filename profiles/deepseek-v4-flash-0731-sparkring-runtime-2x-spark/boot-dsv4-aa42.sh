@@ -13,10 +13,17 @@
 # The fallback from-source stack (ggrun/ggbuild + run-dsv4-lmcache.sh) is
 # untouched by this script; switching boot back to it is one crontab edit.
 
-exec > "$HOME/work/qwen38-exl3/logs/boot-dsv4-aa42.log" 2>&1
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+PROFILE_ENV="${PROFILE_ENV:-$SCRIPT_DIR/.env}"
+if [ -f "$PROFILE_ENV" ]; then
+    . "$PROFILE_ENV"
+fi
+: "${HOST_WORK_DIR:?set HOST_WORK_DIR in $PROFILE_ENV or the process environment}"
+: "${RANK1_SSH_TARGET:?set RANK1_SSH_TARGET in $PROFILE_ENV or the process environment}"
+
+exec > "$HOST_WORK_DIR/logs/boot-dsv4-rank0.log" 2>&1
 set -x
 
-RANK1=198.18.200.2
 API=http://127.0.0.1:8000
 
 # 0. Already healthy? Nothing to do.
@@ -32,16 +39,18 @@ done
 
 # 2. Wait for rank 1's host, then launch its follower if absent.
 for i in $(seq 1 60); do
-    ssh -o BatchMode=yes -o ConnectTimeout=5 "$RANK1" true 2>/dev/null && break
+    ssh -o BatchMode=yes -o ConnectTimeout=5 "$RANK1_SSH_TARGET" true 2>/dev/null && break
     sleep 10
 done
-ssh -o BatchMode=yes -o ConnectTimeout=5 "$RANK1" \
-    "docker ps --format '{{.Names}}' | grep -q '^leg3pair-dsv4-r1\$' || RANK=1 bash /home/code/work/qwen38-exl3/leg3pair-launch.sh" || true
+printf -v REMOTE_LAUNCH \
+    "docker ps --format '{{.Names}}' | grep -q '^leg3pair-dsv4-r1\\$' || RANK=1 bash %q" \
+    "$HOST_WORK_DIR/leg3pair-launch.sh"
+ssh -o BatchMode=yes -o ConnectTimeout=5 "$RANK1_SSH_TARGET" "$REMOTE_LAUNCH" || true
 sleep 5
 
 # 3. Launch rank 0 if absent.
 docker ps --format '{{.Names}}' | grep -q '^leg3pair-dsv4-r0$' || \
-    RANK=0 bash "$HOME/work/qwen38-exl3/leg3pair-launch.sh"
+    RANK=0 bash "$HOST_WORK_DIR/leg3pair-launch.sh"
 
 # 4. Wait for the endpoint (cold model load can take many minutes).
 for i in $(seq 1 180); do
