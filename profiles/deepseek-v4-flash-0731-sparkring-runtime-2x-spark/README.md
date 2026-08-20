@@ -158,14 +158,26 @@ that node remotely; it requires a power cycle. **Treat the key-value budget as
 a hardware-safety parameter on unified memory, not a tuning knob**, and change
 it only with physical or out-of-band access to both nodes.
 
-**A long-context prefill is the memory-critical operation.** With the
-qualified 8 GiB LMCache L1 buffer, a 64K-token prefill drove the serving node
-to 113 GB used of ~121 GB with swap active, and the engine core was killed
-shortly afterwards — the API server then shut down cleanly, so the container
-exits 0 and the failure resembles a graceful stop rather than a crash. Size L1
-at 4 GiB unless you have measured otherwise, and include a long-context cell
-in any acceptance battery: the correctness and concurrency gates all use short
-prompts and never reach this limit.
+**A long-context prefill is the memory-critical operation.** With an 8 GiB
+LMCache L1 buffer, a 64K-token prefill drove the serving node to 113 GB used
+of ~121 GB with swap active, and the engine core was killed shortly
+afterwards; the API server then shut down cleanly, so the container exits 0
+and the failure resembles a graceful stop rather than a crash. Include a
+long-context cell in any acceptance battery: the correctness and concurrency
+gates all use short prompts and never reach this limit.
+
+**The L1 buffer size trades replay reach against host-memory headroom.**
+`leg3pair-inner.sh` ships `--l1-size-gb 4`. A lookup counts an L2 hit only
+after the chunk stages into L1, and the trim policy truncates at the first
+staging failure, so a prefix longer than L1 holds is recomputed rather than
+restored — slower, never wrong. The store footprint measured at this geometry
+is about 64 KB per token per rank (1.2 GB for an 18,688-token prompt, spec
+caches included), which puts the staging reach of a 4 GiB buffer near 65,000
+tokens and an 8 GiB buffer near the full 131,072-token limit. Buffers are host
+memory on a unified-memory node, which is the other side of the trade. Status:
+the gates and benchmarks in [RESULTS.md](RESULTS.md) were measured at 8 GiB;
+the shipped 4 GiB value is implemented and has not yet been exercised by a
+64K-token prefill.
 
 Note that a large budget is unnecessary in any case: per-token cost falls as
 the context limit rises (bounded cache groups amortise over more tokens), and

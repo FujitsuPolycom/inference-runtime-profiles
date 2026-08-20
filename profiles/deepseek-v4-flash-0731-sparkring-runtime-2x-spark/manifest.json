@@ -53,7 +53,7 @@
     "topology": "one MP server per rank, inside the engine's container (shared lifecycle removes the stale-CUDA-IPC restart hazard); ZMQ port 6570, metrics 6580",
     "connector": "LMCacheMPConnector, kv_role kv_both, load_failure_policy recompute",
     "chunk_tokens": 256,
-    "l1": "8 GiB lazy, LRU as qualified; 4 GiB recommended \u2014 an 8 GiB buffer plus a 64K-token prefill exhausted node memory on the reference pair",
+    "l1": "4 GiB lazy, LRU, as shipped in leg3pair-inner.sh. The gates and benchmarks in RESULTS.md were measured with an 8 GiB buffer; 4 GiB is the memory-safety setting, because an 8 GiB buffer plus a 64K-token prefill exhausted node memory on the reference pair. Consequence of the smaller buffer: a prefix stages into L1 before a lookup counts an L2 hit, and at about 64 KB per token per rank 4 GiB stages roughly 65,000 tokens, so longer prefixes recompute instead of restoring. Status of 4 GiB: implemented, not yet exercised by a 64K-token prefill.",
     "l2": "fs_native, 200 GiB per rank, buffered I/O, path encodes checkpoint revision and geometry (lmcache-l2-dsv4-0731-spec-b256)",
     "registered_layers": 170,
     "engine_env_requirement": "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:False when the tier is enabled"

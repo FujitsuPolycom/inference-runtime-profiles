@@ -85,9 +85,18 @@ crash, and the benchmark simply recorded zeros for the remaining cells.
 
 The correctness and concurrency gates elsewhere in this document all use short
 prompts and never approach this limit. Treat a long-context prefill as the
-memory-critical operation on this deployment, size the LMCache L1 buffer
-toward the lower end of the 4-8 GiB range, and include a long-context cell in
-any acceptance battery so this failure mode cannot pass unnoticed.
+memory-critical operation on this deployment and include a long-context cell
+in any acceptance battery so this failure mode cannot pass unnoticed.
+
+`leg3pair-inner.sh` now ships `--l1-size-gb 4` for that headroom. The cost is
+staging reach: a lookup counts an L2 hit only after the chunk stages into L1,
+and the trim policy truncates at the first staging failure. At the store
+footprint measured below — about 1.2 GB for an 18,688-token prompt with spec
+caches, roughly 64 KB per token per rank — a 4 GiB buffer stages about 65,000
+tokens and an 8 GiB buffer about the whole 131,072-token limit. Prefixes past
+that reach recompute instead of restoring. Every gate in this document sits
+well inside 65,000 tokens except the 77,568-token store noted below, which was
+taken on the from-source stack at 8 GiB.
 
 ## Output correctness under speculation
 
@@ -145,6 +154,12 @@ repository rather than only from a running deployment.
 
 Time to first token with a cache-tier hit against a cold prefill of the same
 prompt, decode throughput at contexts beyond 32K, and the effect of the
-runtime's built-in speculation confidence scheduler. A repeat of the 64K
-prefill cell with a 4 GiB LMCache L1 buffer, to confirm it survives, is
-outstanding.
+runtime's built-in speculation confidence scheduler.
+
+Every measurement in this document was taken with an 8 GiB LMCache L1 buffer.
+`leg3pair-inner.sh` ships 4 GiB, and nothing here was re-measured at that
+value. Two cells decide whether the shipped value holds: a 64K-token prefill,
+which must leave the node with memory headroom rather than reaching the state
+described above, and a replay of a prefix beyond the ~65,000-token staging
+reach, which must degrade to recomputation with correct output rather than
+returning a partial restore.
