@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "profile": "qwen36-27b-nvfp4-mtp3-lmcache-rtx5090",
+  "status": "implemented",
+  "status_note": "The bundle carries no RESULTS.md and no benchmark block. README.md records one measured cache figure, the LMCache L1 replay rate; nothing else about this configuration is measured here.",
   "captured_at_utc": "2026-07-23T19:30:00Z",
   "image": "pve03-qwen27b-qwen-mtp-compat:v0251",
   "image_id": "sha256:e4f88a835143cd22aee2397a26ec6bb80b3a4a6fe0c882bcbc63822904766089",

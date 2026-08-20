@@ -43,7 +43,7 @@ nothing measured it; `research-only` means it is not for deployment.
 | Profile | Model | Parallelism | Cache tier | Status |
 |---|---|---|---|---|
 | [DeepSeek-V4-Flash-0731, SparkRing runtime](profiles/deepseek-v4-flash-0731-sparkring-runtime-2x-spark/) | DeepSeek-V4-Flash-0731 FP8, 131,072 ctx | TP2, DSpark depth 5 | LMCache 4 GiB L1 + 200 GiB NVMe L2 | qualified |
-| [DeepSeek V4 Flash DSpark NVFP4, GPU-only KV](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4, 1,048,576 ctx | TP2, MTP3 | none | see profile |
+| [DeepSeek V4 Flash DSpark NVFP4, GPU-only KV](profiles/deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4, 1,048,576 ctx | TP2, MTP3 | none | implemented |
 | [DeepSeek V4 Flash DSpark NVFP4, CPU KV offload](profiles/deepseek-v4-flash-dspark-nvfp4-cpu-offload-candidate-2x-spark/) | DeepSeek-V4-Flash-DSpark NVFP4, 1,048,576 ctx | TP2, MTP3 | 2 GiB/rank CPU RAM | research-only |
 | [Qwen3.8-27B EXL3 K5/K6 + LMCache](profiles/qwen38-27b-exl3-k5k6-lmcache-2x-spark/) | Qwen3.8-27B EXL3, 262,144 ctx | TP2, MTP3 | LMCache 4 GB L1 + 200 GB NVMe L2 | qualified |
 
@@ -62,7 +62,7 @@ what changes.
 | Profile | Model | Parallelism | Cache tier | Status |
 |---|---|---|---|---|
 | [GLM-5.2 v20 + grouped LMCache, FP8 RoPE](profiles/glm52-v20-lmcache-fp8rope/) | GLM-5.2 v20 | TP4 / DCP4 / MTP3 | LMCache, grouped | implemented |
-| [GLM-5.2 v20 r13 EXL3 3.0 bpw](profiles/glm52-v20-r13-exl3-3bpw-750k/) | GLM-5.2 EXL3 3.0 bpw, 750K ceiling | TP4 | see profile | see profile |
+| [GLM-5.2 v20 r13 EXL3 3.0 bpw](profiles/glm52-v20-r13-exl3-3bpw-750k/) | GLM-5.2 EXL3 3.0 bpw, 750K ceiling | TP4 | see profile | implemented |
 | [GLM-5.2 v20 r7 EXL3 3.0 bpw](profiles/glm52-v20-r7-exl3-3bpw/) | GLM-5.2 EXL3 3.0 bpw | TP4 | see profile | implemented |
 
 These rigs need a PCIe peer-access override; without it decode falls by roughly
@@ -73,7 +73,7 @@ controlled comparison, and `tools/check-pcie-p2p.sh` verifies it.
 
 | Profile | Model | Parallelism | Cache tier | Status |
 |---|---|---|---|---|
-| [Qwen3.6-27B NVFP4 MTP3 + LMCache, RTX 5090](profiles/qwen36-27b-nvfp4-mtp3-lmcache-rtx5090/) | Qwen3.6-27B NVFP4, 131,072 ctx | TP1 / MTP3 | LMCache 256 GB RAM L1 + 180 GB Optane L2 | see profile |
+| [Qwen3.6-27B NVFP4 MTP3 + LMCache, RTX 5090](profiles/qwen36-27b-nvfp4-mtp3-lmcache-rtx5090/) | Qwen3.6-27B NVFP4, 131,072 ctx | TP1 / MTP3 | LMCache 256 GB RAM L1 + 180 GB Optane L2 | implemented |
 
 ## Measured throughput
 
