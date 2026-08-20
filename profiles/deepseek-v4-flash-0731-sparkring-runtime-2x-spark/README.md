@@ -23,21 +23,36 @@ DGX Sparks connected by a direct 200GbE cable, with:
   compressor state, SWA, and the three DSpark hidden-state caches), which is
   what makes restore correctness possible for this model.
 
-The runtime is **not built here**: it is the SparkRing project's docker image
-(`FujitsuPolycom/sparkring` — its `runtime/exl3-r7/pins.json` is the
-component identity, `runtime/` the build recipe), image digest
-`sha256:02881d5229d4f4d1cbba0cf40537492a2a505b9d4e43bbfe9a0b2a7bd0584513`
-(tag `sparkring/glm52-exl3-r7-3.5bpw:r34-sm121a-flat2-20260810`), plus three
-patch files bind-mounted over it. This profile records how to run that runtime
-on a two-node pair.
+The runtime is **not built here**: it is the SparkRing project's image plus
+three patch files bind-mounted over it. This profile records how to run that
+runtime on a two-node pair. Pull the image from the GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/fujitsupolycom/gb10-vllm-serving:r34-20260810
+```
+
+| Identifier | Value |
+|---|---|
+| Registry reference | `ghcr.io/fujitsupolycom/gb10-vllm-serving:r34-20260810` |
+| Manifest digest, for pinning | `sha256:df0e2068fc7034a1ec7a2c1fa4e0c3224c720161539525b5a7cbb037dc1d0f8e` |
+| Image ID after pull | `sha256:02881d5229d4f4d1cbba0cf40537492a2a505b9d4e43bbfe9a0b2a7bd0584513` |
+| Size, architecture | 30.8 GB, arm64 |
+
+The published image is a flattened single-layer capture: `docker history`
+reports one layer created by import, so it carries no build steps. Its
+component identity lives in its own labels — vLLM commit `fcc61414` from
+`local-inference-lab/vllm`, b12x commit `284a2eae`, torch 2.12.0+cu132, NCCL
+2.30.4 — and in `runtime/exl3-r7/pins.json` in `FujitsuPolycom/sparkring`,
+whose builder overlay is on a separate branch. Rebuilding it from source is
+therefore a SparkRing task, not something this profile describes.
 
 ## Requirements
 
 - 2x NVIDIA DGX Spark (GB10, ~121 GB unified memory each), driver 580.x,
   connected by at least one direct ConnectX-7 200GbE cable (RoCE).
-- The SparkRing runtime image loaded on both nodes (build per the SparkRing
-  repository's runtime recipe, or transfer the image from an existing
-  SparkRing deployment; verify the digest above).
+- The runtime image pulled on both nodes from the registry reference above.
+  The launcher uses that reference by default; override it with
+  `RUNTIME_IMAGE` to run a locally built or locally tagged image instead.
 - **Three patch files mounted over the image**, all obtainable from the
   SparkRing repository rather than from a running deployment:
   - `kernel_warmup.py` over

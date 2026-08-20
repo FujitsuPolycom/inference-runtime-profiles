@@ -54,7 +54,10 @@ fi
 ENV_TEMPLATE="$SCRIPT_DIR/leg3pair.env"
 BINDS_TEMPLATE="$SCRIPT_DIR/leg3pair.binds"
 HOSTIP=$([ "$RANK" = "0" ] && printf '%s' "$RANK0_FABRIC_ADDR" || printf '%s' "$RANK1_FABRIC_ADDR")
-IMG=sparkring/glm52-exl3-r7-3.5bpw:r34-sm121a-flat2-20260810
+# Pull this reference on both nodes before the first launch. Pin by digest
+# instead of tag where a deployment needs the exact artifact:
+# ghcr.io/fujitsupolycom/gb10-vllm-serving@sha256:df0e2068fc7034a1ec7a2c1fa4e0c3224c720161539525b5a7cbb037dc1d0f8e
+IMG="${RUNTIME_IMAGE:-ghcr.io/fujitsupolycom/gb10-vllm-serving:r34-20260810}"
 L2DIR="$HOST_WORK_DIR/lmcache-l2-dsv4-0731-spec-b256"
 
 expand_template_line() {
