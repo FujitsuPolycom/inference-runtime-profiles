@@ -8,7 +8,7 @@
 # that forced it off in the venv-dsv4 stack (vllm issue #43416).
 #
 # Deltas from the ring container, and nothing else:
-#   - TP 4 -> 2, --nnodes 2, master 198.18.200.1:29500, rank 1 --headless
+#   - TP 4 -> 2, --nnodes 2, the configured rank 0 fabric address as master
 #   - SPARK_TP4/VLLM_SPARK_TP4 custom-transport env removed: its source admits
 #     only world_size==4, so NCCL carries the collectives at TP2
 #   - NCCL set to this pair's proven point-to-point config (single rail
@@ -17,9 +17,9 @@
 #     gpu-memory-utilization 0.70 (the GB10 unified-memory ceiling)
 #   - served names: dsv4-flash (gateway compatibility) + leg3
 #
-# Env comes from /var/tmp/leg3pair.env (185 lines captured from the ring
-# container, transport family stripped); binds from /var/tmp/leg3pair.binds
-# (51 mounts; model/cache/HF sources re-pointed to this pair's paths).
+# Environment and bind templates reside beside this launcher. The launcher
+# replaces their ${VARIABLE} tokens before adding each entry to the Docker
+# command, because Docker does not expand variables inside environment entries.
 #
 # LMCACHE=1 (default) adds the NVMe KV tier: the r18-qualified LMCache branch
 # (wheel at /ws/wheels-t212, heartbeat patch included, torch-2.12 build) is
@@ -29,15 +29,50 @@
 # because checkpoint (0731) and transfer set (DSpark hidden-state caches) both
 # differ from the no-spec tier's. LMCACHE=0 launches without the tier.
 #
-# Usage: RANK=0|1 [LMCACHE=0|1] bash leg3pair-launch.sh   (on the HOST)
+# Usage: copy profile.env.example to .env, replace its placeholders, then run
+# RANK=0|1 [LMCACHE=0|1] bash leg3pair-launch.sh on each host.
 set -eu
 RANK="${RANK:?set RANK=0 or 1}"
 LMCACHE="${LMCACHE:-1}"
-HOSTIP=$([ "$RANK" = "0" ] && echo 198.18.200.1 || echo 198.18.200.2)
-IMG=sparkring/glm52-exl3-r7-3.5bpw:r34-sm121a-flat2-20260810
-L2DIR=/home/code/work/qwen38-exl3/lmcache-l2-dsv4-0731-spec-b256
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+PROFILE_ENV="${PROFILE_ENV:-$SCRIPT_DIR/.env}"
+if [ -f "$PROFILE_ENV" ]; then
+  set -a
+  . "$PROFILE_ENV"
+  set +a
+fi
 
-mkdir -p /var/tmp/leg3-cache "$HOME/.cache/huggingface" "$L2DIR"
+: "${HOST_WORK_DIR:?set HOST_WORK_DIR in $PROFILE_ENV or the process environment}"
+: "${HOST_HF_CACHE_DIR:?set HOST_HF_CACHE_DIR in $PROFILE_ENV or the process environment}"
+: "${CONTAINER_HF_HOME:?set CONTAINER_HF_HOME in $PROFILE_ENV or the process environment}"
+: "${RANK0_FABRIC_ADDR:?set RANK0_FABRIC_ADDR in $PROFILE_ENV or the process environment}"
+: "${RANK1_FABRIC_ADDR:?set RANK1_FABRIC_ADDR in $PROFILE_ENV or the process environment}"
+: "${RANK0_LAN_ADDR:?set RANK0_LAN_ADDR in $PROFILE_ENV or the process environment}"
+: "${RANK1_LAN_ADDR:?set RANK1_LAN_ADDR in $PROFILE_ENV or the process environment}"
+: "${SPARKRING_MASTER_ADDR:?set SPARKRING_MASTER_ADDR in $PROFILE_ENV or the process environment}"
+
+ENV_TEMPLATE="$SCRIPT_DIR/leg3pair.env"
+BINDS_TEMPLATE="$SCRIPT_DIR/leg3pair.binds"
+HOSTIP=$([ "$RANK" = "0" ] && printf '%s' "$RANK0_FABRIC_ADDR" || printf '%s' "$RANK1_FABRIC_ADDR")
+# Pull this reference on both nodes before the first launch. Pin by digest
+# instead of tag where a deployment needs the exact artifact:
+# ghcr.io/fujitsupolycom/gb10-vllm-serving@sha256:df0e2068fc7034a1ec7a2c1fa4e0c3224c720161539525b5a7cbb037dc1d0f8e
+IMG="${RUNTIME_IMAGE:-ghcr.io/fujitsupolycom/gb10-vllm-serving:r34-20260810}"
+L2DIR="$HOST_WORK_DIR/lmcache-l2-dsv4-0731-spec-b256"
+
+expand_template_line() {
+  EXPANDED_LINE="$1"
+  EXPANDED_LINE="${EXPANDED_LINE%$'\r'}"
+  EXPANDED_LINE="${EXPANDED_LINE//\$\{HOST_WORK_DIR\}/${HOST_WORK_DIR}}"
+  EXPANDED_LINE="${EXPANDED_LINE//\$\{HOST_HF_CACHE_DIR\}/${HOST_HF_CACHE_DIR}}"
+  EXPANDED_LINE="${EXPANDED_LINE//\$\{CONTAINER_HF_HOME\}/${CONTAINER_HF_HOME}}"
+  EXPANDED_LINE="${EXPANDED_LINE//\$\{SPARKRING_MASTER_ADDR\}/${SPARKRING_MASTER_ADDR}}"
+  case "$EXPANDED_LINE" in
+    *'${'*) printf 'unexpanded variable in %s: %s\n' "$2" "$EXPANDED_LINE" >&2; exit 1 ;;
+  esac
+}
+
+mkdir -p /var/tmp/leg3-cache "$HOST_HF_CACHE_DIR" "$L2DIR"
 
 ARGS=(run -d --name "leg3pair-dsv4-r$RANK"
   --network host --ipc host --gpus all --shm-size 16g
@@ -46,8 +81,9 @@ ARGS=(run -d --name "leg3pair-dsv4-r$RANK"
   --entrypoint /bin/bash)
 
 while IFS= read -r e; do
-  [ -n "$e" ] && ARGS+=(-e "$e")
-done < /var/tmp/leg3pair.env
+  expand_template_line "$e" leg3pair.env
+  [ -n "$EXPANDED_LINE" ] && ARGS+=(-e "$EXPANDED_LINE")
+done < "$ENV_TEMPLATE"
 
 ARGS+=(-e "VLLM_HOST_IP=$HOSTIP"
   -e NCCL_SOCKET_IFNAME=enp1s0f0np0 -e GLOO_SOCKET_IFNAME=enp1s0f0np0
@@ -63,16 +99,17 @@ if [ "$LMCACHE" = "1" ]; then
 fi
 
 while IFS= read -r b; do
-  [ -n "$b" ] && ARGS+=(-v "$b")
-done < /var/tmp/leg3pair.binds
-ARGS+=(-v /home/code/work/qwen38-exl3/wheels-t212:/wheels:ro
+  expand_template_line "$b" leg3pair.binds
+  [ -n "$EXPANDED_LINE" ] && ARGS+=(-v "$EXPANDED_LINE")
+done < "$BINDS_TEMPLATE"
+ARGS+=(-v "$HOST_WORK_DIR/wheels-t212:/wheels:ro"
   -v "$L2DIR:/l2cache"
   -v /var/tmp/leg3pair-inner.sh:/leg3pair-inner.sh:ro)
 
 ARGS+=("$IMG" -c 'exec bash /leg3pair-inner.sh "$@"'
   _ serve /models/deepseek-v4-flash-0731
   --tensor-parallel-size 2 --nnodes 2 --node-rank "$RANK"
-  --master-addr 198.18.200.1 --master-port 29500
+  --master-addr "$RANK0_FABRIC_ADDR" --master-port 29500
   --distributed-executor-backend mp
   --dtype bfloat16
   --max-model-len 131072 --max-num-seqs 8
@@ -86,7 +123,8 @@ ARGS+=("$IMG" -c 'exec bash /leg3pair-inner.sh "$@"'
   --port 8000 --host 0.0.0.0)
 
 if [ "$LMCACHE" = "1" ]; then
-  ARGS+=(--kv-transfer-config '{"kv_connector":"LMCacheMPConnector","kv_role":"kv_both","kv_load_failure_policy":"recompute","kv_connector_extra_config":{"lmcache.mp.server_urls":["tcp://192.168.0.200:6570","tcp://192.168.0.174:6570"],"lmcache.mp.mq_timeout":60,"lmcache.mp.heartbeat_interval":10}}')
+  KV_TRANSFER_CONFIG=$(printf '%s' '{"kv_connector":"LMCacheMPConnector","kv_role":"kv_both","kv_load_failure_policy":"recompute","kv_connector_extra_config":{"lmcache.mp.server_urls":["tcp://'"$RANK0_LAN_ADDR"':6570","tcp://'"$RANK1_LAN_ADDR"':6570"],"lmcache.mp.mq_timeout":60,"lmcache.mp.heartbeat_interval":10}}')
+  ARGS+=(--kv-transfer-config "$KV_TRANSFER_CONFIG")
 fi
 
 [ "$RANK" = "1" ] && ARGS+=(--headless)

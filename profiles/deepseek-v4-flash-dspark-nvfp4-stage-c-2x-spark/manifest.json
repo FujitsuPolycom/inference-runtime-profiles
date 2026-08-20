@@ -1,6 +1,8 @@
 {
   "schema_version": 1,
   "profile": "deepseek-v4-flash-dspark-nvfp4-stage-c-2x-spark",
+  "status": "implemented",
+  "status_note": "RESULTS.md records client-observed cold-prefill time to first token and throughput from the source deployment across 8K to 128K contexts. No correctness gate and no restart or recovery gate is recorded, so the configuration is not labelled qualified.",
   "captured_at_utc": "2026-07-23T19:10:00Z",
   "image": "vllm-dspark-runtime:dspark-nvfp4-stage-c",
   "image_id": "sha256:2035c23b1f353a9f1e98fe2d4204255b4213c5f075eee933ab1fcb99650fb900",

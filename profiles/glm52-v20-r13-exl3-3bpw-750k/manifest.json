@@ -1,6 +1,7 @@
 {
   "profile": "glm52-v20-r13-exl3-3bpw-750k",
-  "status": "live-captured",
+  "status": "implemented",
+  "status_note": "Captured from the running deployment on 2026-08-17 (original status label: live-captured). RESULTS.md attaches no benchmark receipt, so no throughput or correctness figure is recorded for this profile.",
   "captured_at": "2026-08-17",
   "hardware": {
     "gpu": "4x NVIDIA RTX PRO 6000 Blackwell Workstation Edition, 97887 MiB each",

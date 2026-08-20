@@ -23,9 +23,9 @@ if [ "${LMCACHE:-0}" = "1" ]; then
     # Upward: a lookup counts an L2 hit only after the chunk stages into L1,
     # and the trim policy truncates at the first staging failure, so a prefix
     # longer than L1 holds replays as a recompute rather than a restore. At
-    # this geometry the store footprint is about 64 KB per token per rank, so
-    # 4 GiB stages roughly 65,000 tokens and 8 GiB roughly the whole
-    # 131,072-token limit.
+    # the two recorded store footprints, 64 and 84 KB per token per rank,
+    # 4 GiB stages 50,000 to 67,000 tokens and 8 GiB stages 100,000 to
+    # 134,000, against a 131,072-token context limit.
     # Downward: L1 is host memory on a unified-memory node, and a 64K-token
     # prefill with an 8 GiB buffer reached 113 GB used of ~121 GB with swap
     # active, after which the engine core was killed. 4 GiB keeps that

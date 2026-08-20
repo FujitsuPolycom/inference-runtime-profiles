@@ -20,11 +20,15 @@
     "dspark_block_size": 5
   },
   "image": {
-    "source": "FujitsuPolycom/sparkring runtime recipe (runtime/exl3-r7, pins.json is the component identity)",
+    "source": "FujitsuPolycom/sparkring runtime recipe (runtime/exl3-r7, pins.json is the component identity); published at ghcr.io/fujitsupolycom/gb10-vllm-serving",
+    "registry_reference": "ghcr.io/fujitsupolycom/gb10-vllm-serving:r34-20260810",
+    "manifest_digest": "sha256:df0e2068fc7034a1ec7a2c1fa4e0c3224c720161539525b5a7cbb037dc1d0f8e",
     "local_tag": "sparkring/glm52-exl3-r7-3.5bpw:r34-sm121a-flat2-20260810",
+    "architecture": "arm64",
+    "size_bytes": 30832266522,
     "digest": "sha256:02881d5229d4f4d1cbba0cf40537492a2a505b9d4e43bbfe9a0b2a7bd0584513",
     "overlays": "8 bind mounts: three patch files (kernel_warmup.py from the SparkRing hotfix runtime/hotfixes/deployed-r34-20260810, quack/copy_utils.py and quack/layout_utils.py for the quack/cutlass version skew, and the tvm-ffi directory) plus model, cache, HuggingFace-cache and transport-library mounts. leg3pair.binds ships the reference pair's full 51-mount capture; the other 43 are inert at TP2 and were verified removable.",
-    "note": "The runtime is not built by this profile; it is the SparkRing project's image plus three patch files, all obtainable from that repository, launched with the deltas recorded here."
+    "note": "The runtime is not built by this profile; it is the SparkRing project's image plus three patch files, launched with the deltas recorded here. The published image is a flattened single-layer capture carrying no build steps: its component identity is in its own labels (vLLM commit fcc61414 from local-inference-lab/vllm, b12x commit 284a2eae, torch 2.12.0+cu132, NCCL 2.30.4) and in runtime/exl3-r7/pins.json in FujitsuPolycom/sparkring, whose builder overlay is on a separate branch. Pulling the registry reference yields image ID sha256:02881d5229d4f4d1cbba0cf40537492a2a505b9d4e43bbfe9a0b2a7bd0584513."
   },
   "runtime": {
     "engine": "vLLM inside the image at /opt/venv (SparkRing pins: local-inference-lab/vllm + integration patch)",
@@ -53,7 +57,7 @@
     "topology": "one MP server per rank, inside the engine's container (shared lifecycle removes the stale-CUDA-IPC restart hazard); ZMQ port 6570, metrics 6580",
     "connector": "LMCacheMPConnector, kv_role kv_both, load_failure_policy recompute",
     "chunk_tokens": 256,
-    "l1": "4 GiB lazy, LRU, as shipped in leg3pair-inner.sh. The gates and benchmarks in RESULTS.md were measured with an 8 GiB buffer; 4 GiB is the memory-safety setting, because an 8 GiB buffer plus a 64K-token prefill exhausted node memory on the reference pair. Consequence of the smaller buffer: a prefix stages into L1 before a lookup counts an L2 hit, and at about 64 KB per token per rank 4 GiB stages roughly 65,000 tokens, so longer prefixes recompute instead of restoring. Status of 4 GiB: implemented, not yet exercised by a 64K-token prefill.",
+    "l1": "4 GiB lazy, LRU, as shipped in leg3pair-inner.sh, qualified for serving and for long-context prefill headroom: a 65,536-token prefill leaves 11 GB available per node against 12.5 GB at idle, where an 8 GiB buffer reached the 7-8 GB at which the engine core was killed. Consequence of the smaller buffer: a prefix stages into L1 before a lookup counts an L2 hit, and the external prefix cache hit rate reads 33.7% at 65,536 tokens against 97.2% at 24,000, bounding the staging reach between those lengths and matching a per-token footprint estimate of 50,000 to 67,000 tokens. Prefixes past the reach recompute instead of restoring. Cells in RESULTS.md marked as taken under an 8 GiB buffer predate this value.",
     "l2": "fs_native, 200 GiB per rank, buffered I/O, path encodes checkpoint revision and geometry (lmcache-l2-dsv4-0731-spec-b256)",
     "registered_layers": 170,
     "engine_env_requirement": "PYTORCH_CUDA_ALLOC_CONF=expandable_segments:False when the tier is enabled"
@@ -64,7 +68,13 @@
     "mean_acceptance_length": 2.8,
     "draft_acceptance_rate": 0.36,
     "replay_restore_18688_tokens_seconds": 0.051,
-    "note": "Client-observed unless stated; conditions in RESULTS.md. Coding output decodes about 1.6x faster than prose because speculative acceptance rises on structured content. A 64K prefill on this configuration (8 GiB LMCache L1) exhausted node memory and the engine core was killed; see the memory-headroom section of RESULTS.md.",
+    "note": "Client-observed unless stated; conditions in RESULTS.md. Figures in this block were measured with an 8 GiB LMCache L1 buffer, where a 64K prefill exhausted node memory and the engine core was killed. The shipped 4 GiB buffer was measured separately: see single_stream_decode_tok_s_at_4gib_l1 and longctx_min_avail_gb_at_4gib_l1 below and the corresponding RESULTS.md section. Coding output decodes about 1.6x faster than prose because speculative acceptance rises on structured content.",
+    "single_stream_decode_tok_s_at_4gib_l1": [43.4, 42.5],
+    "mean_acceptance_length_at_4gib_l1": [2.97, 2.8],
+    "longctx_min_avail_gb_at_4gib_l1": 11,
+    "longctx_prefill_tokens": 65536,
+    "external_prefix_cache_hit_rate_at_65536_tokens": 0.337,
+    "external_prefix_cache_hit_rate_at_24000_tokens": 0.972,
     "single_stream_decode_engine_peak_tok_s": 40,
     "single_stream_decode_depth7_tok_s": 31.3,
     "aggregate_tok_s_8_streams": 120.5,

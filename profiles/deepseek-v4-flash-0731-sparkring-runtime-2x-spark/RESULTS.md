@@ -10,7 +10,8 @@ correctness (planted key-value facts at fixed depths in deterministic filler).
 
 | Configuration | Single-stream decode | Conditions |
 |---|---|---|
-| This profile (DSpark depth 5) | **36-40 tok/s** | client-observed 36.2, engine-reported peak 38.6-40; 1 request, 512-2048 token generations |
+| DSpark depth 5, 8 GiB L1 buffer | **36-40 tok/s** | client-observed 36.2, engine-reported peak 38.6-40; 1 request, 512-2048 token generations |
+| DSpark depth 5, shipped 4 GiB L1 buffer | **42.5-43.4 tok/s** | client-observed over two runs, mean acceptance length 2.80 and 2.97; conditions in the 4 GiB section below |
 | Same pair, from-source build, no speculation | 28.3 tok/s | 90 s sustained, client rate = server rate |
 | Speculative depth 7 | 31.3 tok/s | same measurement, otherwise identical configuration |
 
@@ -88,15 +89,17 @@ prompts and never approach this limit. Treat a long-context prefill as the
 memory-critical operation on this deployment and include a long-context cell
 in any acceptance battery so this failure mode cannot pass unnoticed.
 
-`leg3pair-inner.sh` now ships `--l1-size-gb 4` for that headroom. The cost is
+`leg3pair-inner.sh` ships `--l1-size-gb 4` for that headroom. The cost is
 staging reach: a lookup counts an L2 hit only after the chunk stages into L1,
-and the trim policy truncates at the first staging failure. At the store
-footprint measured below — about 1.2 GB for an 18,688-token prompt with spec
-caches, roughly 64 KB per token per rank — a 4 GiB buffer stages about 65,000
-tokens and an 8 GiB buffer about the whole 131,072-token limit. Prefixes past
-that reach recompute instead of restoring. Every gate in this document sits
-well inside 65,000 tokens except the 77,568-token store noted below, which was
-taken on the from-source stack at 8 GiB.
+and LMCache's default trim policy truncates a lookup at the first chunk that
+fails to stage. Two store
+footprints are on record below — about 1.2 GB for the 18,688-token prompt with
+spec caches, and 6.1 GiB per rank for the 77,568-token store without
+speculation, so 64 and 84 KB per token per rank — which puts a 4 GiB buffer at
+50,000 to 67,000 tokens of staging reach and an 8 GiB buffer at 100,000 to
+134,000. Prefixes past that reach recompute instead of restoring. Every gate in
+this document sits inside 50,000 tokens except the 77,568-token store, which
+was taken on the from-source stack at 8 GiB.
 
 ## Output correctness under speculation
 
@@ -150,11 +153,49 @@ repository rather than only from a running deployment.
 | Cache server lost mid-flight | rank-1 cache server killed, then a request whose prefix was stored | correct answers (3/3 facts) by recomputation in 71.3 s — degrades to slow, never to wrong |
 | Long idle | 13 minutes idle after a store, then replay | zero reap events on either rank; replay restored in 1.57 s |
 
+## The 4 GiB L1 buffer, measured
+
+Conditions: both nodes carrying `--l1-size-gb 4`, both containers relaunched,
+endpoint ready 404 s after launch, concurrency 1, 2026-08-20.
+
+| Cell | Result |
+|---|---|
+| 34-tool corruption probe under speculation | 2,125 and 1,743 characters over two runs, no leaked template markers |
+| Planted facts, 24,000-token prompt | 3/3 |
+| Single-stream decode | 43.4 and 42.5 tok/s, mean acceptance length 2.97 and 2.80 |
+| Planted facts, 65,536-token prompt | 3/3 |
+| Available memory at the low point of the 65,536-token prefill | 11 GB per node, against 12.5 GB at idle; free swap held at 11 GB |
+
+The 65,536-token prefill was computed rather than restored: prompt throughput
+held 1,344-1,534 tok/s across it, near the 1,623 tok/s recorded above for a
+cold prefill at that length, and the external prefix cache hit rate read 33.7%
+during it against 97.2% on the 24,000-token prompt in the same run. Those two
+figures bound the staging reach between 24,000 and 65,536 tokens, measuring
+what the per-token footprint arithmetic estimates at 50,000 to 67,000.
+
+A 64K-token prefill therefore costs about 1.5 GB of available memory at this
+buffer size, against the 7-8 GB reached with an 8 GiB buffer, where the engine
+core was killed. One gigabyte of margin remains above the abort floor the
+acceptance battery uses, and 65,536 tokens is the longest prompt measured on
+this configuration.
+
+## Reproducing these gates
+
+[gates/](gates/) carries two probes that assert the correctness properties
+recorded above, against any endpoint serving this profile:
+`replay-gate.py` for planted-fact correctness over a long prompt, and
+`tool-array-probe.py` for output integrity under a 34-tool array. Both
+generate their requests from a seed rather than replaying a captured one.
+Measured on the reference pair 2026-08-20: `facts=3/3` in 13.28 s at 24,000
+tokens, and 2,499 characters with no leaked markers from the tool array.
+
 ## Not yet measured
 
 Time to first token with a cache-tier hit against a cold prefill of the same
-prompt, decode throughput at contexts beyond 32K, and the effect of the
-runtime's built-in speculation confidence scheduler.
+prompt, decode throughput at contexts beyond 32K, the prompt length at which
+the memory floor is crossed, and the effect of the DSpark confidence controls
+(`dspark_confidence_threshold`, `dspark_confidence_temperature`,
+`dspark_budget_frac` in the speculative config).
 
 Every measurement in this document was taken with an 8 GiB LMCache L1 buffer.
 `leg3pair-inner.sh` ships 4 GiB, and nothing here was re-measured at that
