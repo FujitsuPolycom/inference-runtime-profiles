@@ -192,17 +192,17 @@ gates all use short prompts and never reach this limit.
 
 **The L1 buffer size trades replay reach against host-memory headroom.**
 `leg3pair-inner.sh` ships `--l1-size-gb 4`. A lookup counts an L2 hit only
-after the chunk stages into L1, and the trim policy truncates at the first
-staging failure, so a prefix longer than L1 holds is recomputed rather than
-restored — slower, never wrong. What bounds staging is the stored chunk
+after the chunk stages into L1, and LMCache's default trim policy truncates a
+lookup at the first chunk that fails to stage, so a prefix longer than L1 holds
+is recomputed rather than restored — slower, never wrong. What bounds staging is the stored chunk
 footprint per rank, and two stores are on record: 18,688 tokens in about
 1.2 GB with speculative caches, and 77,568 tokens in 6.1 GiB per rank without
 speculation. Those are 64 and 84 KB per token per rank, so a 4 GiB buffer
 stages 50,000 to 67,000 tokens and an 8 GiB buffer 100,000 to 134,000, against
 a 131,072-token context limit. The engine's own key-value pool costs about
 18.5 KB per token at that limit — a different quantity, measured on the GPU
-side, which does not bound staging. Buffers are host
-memory on a unified-memory node, which is the other side of the trade. Status:
+side, which does not bound staging. An L1 buffer is host memory on a
+unified-memory node, which is the other side of the trade. Status:
 the gates and benchmarks in [RESULTS.md](RESULTS.md) were measured at 8 GiB;
 the shipped 4 GiB value is implemented and has not yet been exercised by a
 64K-token prefill.

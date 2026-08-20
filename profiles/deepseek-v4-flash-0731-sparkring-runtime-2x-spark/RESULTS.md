@@ -88,9 +88,10 @@ prompts and never approach this limit. Treat a long-context prefill as the
 memory-critical operation on this deployment and include a long-context cell
 in any acceptance battery so this failure mode cannot pass unnoticed.
 
-`leg3pair-inner.sh` now ships `--l1-size-gb 4` for that headroom. The cost is
+`leg3pair-inner.sh` ships `--l1-size-gb 4` for that headroom. The cost is
 staging reach: a lookup counts an L2 hit only after the chunk stages into L1,
-and the trim policy truncates at the first staging failure. Two store
+and LMCache's default trim policy truncates a lookup at the first chunk that
+fails to stage. Two store
 footprints are on record below — about 1.2 GB for the 18,688-token prompt with
 spec caches, and 6.1 GiB per rank for the 77,568-token store without
 speculation, so 64 and 84 KB per token per rank — which puts a 4 GiB buffer at
