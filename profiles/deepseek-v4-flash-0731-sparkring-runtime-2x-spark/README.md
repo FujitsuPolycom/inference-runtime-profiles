@@ -57,32 +57,59 @@ therefore a SparkRing task, not something this profile describes.
   SparkRing repository rather than from a running deployment:
   - `kernel_warmup.py` over
     `/opt/venv/lib/python3.12/site-packages/vllm/model_executor/warmup/` —
-    apply `runtime/hotfixes/deployed-r34-20260810/model_executor__warmup__kernel_warmup.py.patch`.
-    Without it the first non-GLM model served from this image dies during
-    memory determination.
+    apply `runtime/patches/00-reference-vllm/model_executor__warmup__kernel_warmup.py.patch`
+    from `FujitsuPolycom/sparkring` to the image's copy of that file. It warms
+    the DeepSeek mHC kernels across the CUDA-graph capture sizes; without it
+    the first non-GLM model served from this image dies during memory
+    determination.
   - `quack/copy_utils.py` and `quack/layout_utils.py` over the image's `quack`
     package — annotation fixes for a `quack`/`cutlass` version skew that
     otherwise raises `module cutlass.cute.core has no attribute ThrMma`.
   - the `tvm-ffi` directory on `PYTHONPATH` — without it the workers raise
     `make_kwargs_wrapper() got an unexpected keyword argument`.
 
-  **Verified minimal set:** the reference pair serves and passes every gate
-  in [RESULTS.md](RESULTS.md) with exactly 8 bind mounts — those three patches
-  plus the model, cache, HuggingFace-cache and transport-library mounts.
-  [leg3pair.binds](leg3pair.binds) ships the reference pair's full 51-mount
-  list, captured from a live SparkRing deployment; 43 of those 51 are inert
-  under this configuration, because the custom four-node transport that
-  imports them is disabled at TP2. Filtering the list to the 8 that matter:
+  **Minimal set:** seven of the mounts in [leg3pair.binds](leg3pair.binds)
+  matter — the three patches above plus the checkpoint, the JIT cache, and the
+  HuggingFace cache. That file ships the reference pair's full 51-mount list
+  captured from a live SparkRing deployment, and the rest are inert here
+  because the custom four-node transport that imports them is disabled at TP2.
+  **Do not launch with the 51-line list as shipped:** 44 of its sources are
+  paths that exist only on that pair. Filter it first:
 
   ```bash
-  grep -E 'kernel_warmup|/quack/|tvm-ffi|:/models/|:/cache|huggingface|libspark_transport_capi' \
+  grep -E 'kernel_warmup|/quack/|tvm-ffi|:/models/|:/cache$|HF_CACHE_DIR' \
       leg3pair.binds > minimal.binds
   ```
+
+  The eighth mount a previous capture carried,
+  `libspark_transport_capi.so` over `/opt/sparkring/spark_transport/`, is not
+  in that filter. On the reference pair the library is present in the
+  container and mapped by none of its eight processes, while `libnccl`
+  appears in 42 mappings across the same processes: at TP2 the collectives go
+  through NCCL and the transport library is never loaded. Omitting it also
+  removes a build artifact that is not obtainable from a public repository.
 - The checkpoint at
   `${HOST_WORK_DIR}/model/DeepSeek-V4-Flash-0731` on both nodes
   (`huggingface-cli download deepseek-ai/DeepSeek-V4-Flash-0731 --revision
   913f0657a874...` — 156 GB, 48 shards).
 - For the cache tier: the LMCache wheel described below.
+
+## What this profile does not supply
+
+The bundle records a configuration; it is not a complete build. Four inputs
+have to be produced before a first launch, and none of them ships here or in
+`FujitsuPolycom/sparkring`:
+
+| Input | State | What it takes |
+|---|---|---|
+| `quack/copy_utils.py`, `quack/layout_utils.py` | annotation-fixed copies of the image's own files | The public repository pins the stock `quack_kernels` 0.5.0 wheel in `runtime/exl3-r7/requirements-quack.txt` but does not carry the fixed files. Reproduce the fix against the symptom: `module cutlass.cute.core has no attribute ThrMma`. |
+| `tvm-ffi` directory mounted at `/opt/sparkring-r7-tvm-ffi` | unpacked wheel | `runtime/exl3-r7/requirements-tvm-ffi.txt` pins `apache_tvm_ffi` 0.1.10 for aarch64; unpack that wheel to a directory and mount it. |
+| LMCache wheel at `${HOST_WORK_DIR}/wheels-t212/` | built locally | Build instructions are below. The heartbeat dead-guard fix they refer to is described but not published as a patch file; the defect is a `{} is not None` guard on a dict, at `vllm_multi_process_adapter.py:730,733`. |
+| Correctness gates in [RESULTS.md](RESULTS.md) | not shipped | The planted-fact probe, the 34-tool corruption request and the acceptance battery are operator-side scripts held outside this repository. Reproducing the gates means writing equivalents from their descriptions. |
+
+Everything else — image, launcher, environment, mounts, boot scripts — is
+here. A first launch is reachable without the gate scripts; verifying the
+result the way the reference pair did is not.
 
 ## Private deployment variables
 
@@ -140,12 +167,13 @@ Place the wheel in `${HOST_WORK_DIR}/wheels-t212/` on both nodes.
 
 1. Copy `profile.env.example` to a private `.env` and replace every
    placeholder. Stage `.env`, [leg3pair-launch.sh](leg3pair-launch.sh),
-   [leg3pair.env](leg3pair.env), and either
-   [leg3pair.binds](leg3pair.binds) as shipped or the 8-line minimal filter
-   above together in `${HOST_WORK_DIR}` on both nodes. Stage
-   [leg3pair-inner.sh](leg3pair-inner.sh) at
-   `/var/tmp/leg3pair-inner.sh`. Mount sources must exist at the paths the bind
-   list names.
+   [leg3pair.env](leg3pair.env) and the filtered bind list from the minimal
+   set above together in `${HOST_WORK_DIR}` on both nodes, naming the filtered
+   file `leg3pair.binds` there. Stage
+   [leg3pair-inner.sh](leg3pair-inner.sh) at `/var/tmp/leg3pair-inner.sh`.
+   Every source path a bind line names must exist before launch: Docker
+   creates a directory in place of a missing bind source, which turns a
+   missing patch file into a silently wrong mount rather than an error.
 2. Launch rank 1 first, then rank 0 (each on its own host):
    `RANK=1 bash leg3pair-launch.sh` / `RANK=0 bash leg3pair-launch.sh`.
    `LMCACHE=0` launches without the cache tier. First launch pays a long
