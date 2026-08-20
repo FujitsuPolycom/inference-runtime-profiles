@@ -150,6 +150,29 @@ Place the wheel in `${HOST_WORK_DIR}/wheels-t212/` on both nodes.
    identical single-request greedy conditions; the behavioral gates use
    answer correctness.
 
+### What the environment file does not carry
+
+`leg3pair.env` holds the container environment captured from a running
+SparkRing deployment, with the custom-transport family stripped. It carries no
+model-identity or build-lineage variables — `SPARKRING_MODEL_REPOSITORY`,
+`SPARKRING_MODEL_REVISION`, `SPARKRING_MODEL_CONFIG_SHA256`,
+`SPARKRING_KV_PROFILE`, `SPARKRING_RUNTIME_ID` and the `SPARKRING_NF3_*`
+commit pins. Those are inputs to the image's own entrypoints
+(`/opt/sparkring/public-entrypoint.sh`, `/opt/sparkring-exl3/entrypoint.sh`),
+which this launch replaces with `--entrypoint /bin/bash`, and the values a
+SparkRing capture carries describe that deployment's checkpoint rather than
+the one served here. `SPARKRING_IMAGE_DIGEST` remains, because it identifies
+the image this profile actually runs.
+
+Restoring the image entrypoint means supplying those variables for the
+checkpoint being served; the entrypoint fails closed when one is unset, and
+`public-entrypoint.sh` additionally rejects a `SPARKRING_KV_PROFILE` that
+disagrees with `VLLM_SPARK_KV_PROFILE`.
+
+`SPARK_GLM52_MTP_INDEX_REUSE=0` stays despite naming another model family:
+`/opt/spark-vllm/sitecustomize.py` reads it, so it is a runtime gate rather
+than provenance, and it is set to the disabling value.
+
 ## Configuration reference (deltas from the 4x SparkRing ring)
 
 The launch is the ring's DeepSeek container spec with exactly these changes:
