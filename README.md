@@ -1,5 +1,8 @@
 # Reproducible Runtime Profiles
 
+> the DGX Spark recipes should be considered stale until this banner is removed
+> those recipes are being refined in the author's SparkRing project
+
 Small, shareable bundles for GPU inference deployments. A profile records the
 image digest, launch arguments, environment, mounts, source revisions, hardware
 summary, and benchmark references without copying model weights or private
